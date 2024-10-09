@@ -17,6 +17,7 @@ It can be used to either analyze text for research purposes or practice writing.
 [Download](https://github.com/Inkdecker/session_writing/releases/download/1.0/session_writing.exe) and run the executable, no installation needed.
 
 1 - Click "Add Folders", then select 1 or more folders containing the text files (.txt, .epubs or .pdf) you wish to process.
+
 2 - Enter the keywords you want to use to extract the sentences, you can also use keywords ignore keywords.
 
 Prefix | Result
@@ -27,7 +28,9 @@ Keyword | search for both singular and plural forms
 !&Keyword | ignore sentences with the given form
 
 3 - Check "Highlight Keywords" if you want your keywords to be highlighted in output files for later processing. 
+
 4 - Select "Single output" to store all the sentences into a single files, "All output" to produce additional files for each individual keywords.
+
 5 - Click "OK", the extracted sentences will be stored inside the text_preset/ folder, the sentences separated by an empty line.
 
 ## Troubleshooting 
