@@ -14,7 +14,7 @@ It can be used to either analyze text for research purposes or practice writing.
 
 
 # Usage
-[Download](https://github.com/Inkdecker/session_drawing/releases/download/1/session_writing.exe) and run the executable, no installation needed.
+[Download](https://github.com/Inkdecker/session_writing/releases/download/1.0/session_writing.exe) and run the executable, no installation needed.
 
 1 - Click "Add Folders", then select 1 or more folders containing the text files (.txt, .epubs or .pdf) you wish to process.
 2 - Enter the keywords you want to use to extract the sentences, you can also use keywords ignore keywords.
