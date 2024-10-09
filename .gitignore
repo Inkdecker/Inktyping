@@ -1,0 +1,16 @@
+__pycache__/
+build/
+dist/
+presets/text_presets/
+presets/session_presets/
+presets/theme_presets/
+Test folder/
+Test folder 2/
+Test folder 3/
+
+1_spec_file.bat
+2_exe_packing.bat
+compile_ressources.bat
+save_output.txt
+session_writing.spec
+session_writing_copy.spec.txt

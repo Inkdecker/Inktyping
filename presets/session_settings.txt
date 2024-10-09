@@ -1,0 +1,33 @@
+{
+    "selected_sentence_row": 1,
+    "selected_session_row": 1,
+    "randomize_settings": true,
+    "auto_start_settings": false,
+    "theme_settings": "default_theme.txt",
+    "shortcuts": {
+        "main_window": {
+            "start": "S",
+            "close": "Escape"
+        },
+        "session_window": {
+            "toggle_highlight": "G",
+            "toggle_text_field": "T",
+            "always_on_top": "A",
+            "prev_sentence": "Left",
+            "pause_timer": "Space",
+            "close": "Escape",
+            "next_sentence": "Right",
+            "open_folder": "O",
+            "copy_path": "C",
+            "delete_sentence": "Ctrl+D",
+            "zoom_in": "Q",
+            "zoom_out": "D",
+            "zoom_in_numpad": "+",
+            "zoom_out_numpad": "-",
+            "show_main_window": "Tab",
+            "add_30_seconds": "Up",
+            "add_60_seconds": "Ctrl+Up",
+            "restart_timer": "Ctrl+Shift+Up"
+        }
+    }
+}
