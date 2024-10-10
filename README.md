@@ -1,6 +1,7 @@
 <p align="center">
   <img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample.png" alt="Project Screenshot" width="600"/>
 </p>
+
 # Session_writing
 
 This is a free text mining tool users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
