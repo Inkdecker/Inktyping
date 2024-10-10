@@ -217,7 +217,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>resources/icons/DARK-32x32.png</normaloff>resources/icons/DARK-32x32.png</iconset>
+    <normaloff>resources/icons/session_writing.png</normaloff>resources/icons/session_writing.png</iconset>
   </property>
   <property name="windowOpacity">
    <double>4.000000000000000</double>
