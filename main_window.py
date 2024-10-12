@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         MainWindow.setFocusPolicy(QtCore.Qt.ClickFocus)
         MainWindow.setAcceptDrops(True)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("C:\\Users\\PC\\Desktop\\ART TUTORIALS\\SHORTCUTS & STUFF\\session_writing\\ui\\resources/icons/session_writing.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap("C:\\Users\\PC\\Desktop\\ART TUTORIALS\\SHORTCUTS & STUFF\\session_writing\\ui\\resources/icons/session_writing.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setWindowOpacity(4.0)
         MainWindow.setToolTip("")
@@ -165,6 +165,9 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setContentsMargins(-1, -1, 253, -1)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setObjectName("label")
+        self.horizontalLayout_4.addWidget(self.label)
         self.select_images = QtWidgets.QLabel(self.centralwidget)
         self.select_images.setMinimumSize(QtCore.QSize(200, 27))
         self.select_images.setMaximumSize(QtCore.QSize(200, 27))
@@ -555,7 +558,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Sentence Practice"))
-        self.select_images.setText(_translate("MainWindow", "Sentences presets"))
+        self.label.setText(_translate("MainWindow", "<html><head/><body><p><img src=\":/icons/icons/session_writing_48x48.png\"/></p></body></html>"))
+        self.select_images.setText(_translate("MainWindow", "  Sentences presets"))
         self.theme_options_button.setText(_translate("MainWindow", "Themes"))
         item = self.table_sentences_selection.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Sentences presets"))
