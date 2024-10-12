@@ -22,7 +22,7 @@ It can be used to either analyze text for research purposes or practice writing.
 
 1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
-2 - Enter the **keywords** you want to use to extract the sentences, you can also use keywords to ignore.
+2 - Enter the **keywords** you want to use to extract the sentences, you can also use **keywords** to ignore.
 
 Prefix | Result
 ------------ | -------------
@@ -35,7 +35,7 @@ Prefix | Result
 
 4 - Select **"Single output"** to store all the sentences into a single files, **"All output"** to produce additional files for each individual keywords.
 
-5 - Click "OK", the extracted sentences will be stored inside the **text_preset/ folder**, the sentences separated by an empty line.
+5 - Click "OK", the extracted sentences will be stored inside the **text_preset/** folder, the sentences separated by an empty line.
 
 ## Troubleshooting 
 - Delete the **session_settings.txt** to reset settings and shortcuts.
@@ -43,7 +43,7 @@ Prefix | Result
 - Default encoding is **UTF-8** so the presets files should be encoded as such.
 
 ## Hotkeys
-All hotkeys can be modified through the **session_settings.txt** inside the preset folder, however, be careful not to duplicate the keys.### Configuration window:
+All **hotkeys** can be modified through the **session_settings.txt** inside the preset folder, however, be careful not to duplicate the keys.### Configuration window:
 Button | Hotkey
 ------------ | -------------
 Start session | S
