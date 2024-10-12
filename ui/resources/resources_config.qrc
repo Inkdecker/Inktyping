@@ -26,6 +26,7 @@
     <file>icons/text.png</file>
     <file>icons/session_writing.ico</file>
     <file>icons/session_writing.png</file>
+    <file>icons/session_writing_48x48.png</file>
   </qresource>
 
 </RCC>
