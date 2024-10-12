@@ -20,30 +20,30 @@ It can be used to either analyze text for research purposes or practice writing.
 # Usage
 [Download](https://github.com/Inkdecker/session_writing/releases/download/1.0/session_writing.exe) and run the executable, no installation needed.
 
-1 - Click "Add Folders", then select 1 or more folders containing the text files (.txt, .epubs or .pdf) you wish to process.
+1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
-2 - Enter the keywords you want to use to extract the sentences, you can also use keywords ignore keywords.
+2 - Enter the **keywords** you want to use to extract the sentences, you can also use keywords to ignore.
 
 Prefix | Result
 ------------ | -------------
-Keyword | search for both singular and plural forms
-&Keyword | search the given form
-!Keyword | ignore sentences with either singular or plural forms
-!&Keyword | ignore sentences with the given form
+**Keyword** | search for both singular and plural forms
+**&Keyword** | search the given form
+**!Keyword** | ignore sentences with either singular or plural forms
+**!&Keyword** | ignore sentences with the given form
 
-3 - Check "Highlight Keywords" if you want your keywords to be highlighted in output files for later processing. 
+3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
 
-4 - Select "Single output" to store all the sentences into a single files, "All output" to produce additional files for each individual keywords.
+4 - Select **"Single output"** to store all the sentences into a single files, **"All output"** to produce additional files for each individual keywords.
 
-5 - Click "OK", the extracted sentences will be stored inside the text_preset/ folder, the sentences separated by an empty line.
+5 - Click "OK", the extracted sentences will be stored inside the **text_preset/ folder**, the sentences separated by an empty line.
 
 ## Troubleshooting 
-- Delete the session_settings.txt to reset settings and shortcuts.
-- Delete the preset folder and restart the executable to reset everything back to default.
-- Default encoding is UTF-8 so the presets files should be encoded as such.
+- Delete the **session_settings.txt** to reset settings and shortcuts.
+- Delete the **preset** folder and restart the executable to reset everything back to default.
+- Default encoding is **UTF-8** so the presets files should be encoded as such.
 
 ## Hotkeys
-### Configuration window:
+All hotkeys can be modified through the **session_settings.txt** inside the preset folder, however, be careful not to duplicate the keys.### Configuration window:
 Button | Hotkey
 ------------ | -------------
 Start session | S
