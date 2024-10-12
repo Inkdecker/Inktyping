@@ -43,7 +43,7 @@ Prefix | Result
 - Default encoding is **UTF-8** so the presets files should be encoded as such.
 
 ## Hotkeys
-All **hotkeys** can be modified through the **session_settings.txt** inside the preset folder, however, be careful not to duplicate the keys.
+All **hotkeys** can be modified through the **session_settings.txt** inside the preset folder, however, be careful as <u>duplicate the keys get disabled</u>.
 
 ### Configuration window:
 Button | Hotkey
