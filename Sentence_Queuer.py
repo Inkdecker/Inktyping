@@ -82,24 +82,26 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Use the executable's directory for absolute paths
         if getattr(sys, 'frozen', False):  # Check if the application is frozen (compiled as an EXE)
-            base_dir = os.path.dirname(sys.executable)
+            self.base_dir = os.path.dirname(sys.executable)
+            self.temp_dir = sys._MEIPASS
         else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.temp_dir = None
 
 
 
-
-        self.presets_dir = os.path.join(base_dir, 'presets')
+        self.presets_dir = os.path.join(self.base_dir, 'presets')
         self.text_presets_dir = os.path.join(self.presets_dir, 'text_presets')
         self.session_presets_dir = os.path.join(self.presets_dir, 'session_presets')
         self.theme_presets_dir = os.path.join(self.presets_dir, 'theme_presets')  # New directory for themes
-        self.default_themes_dir = os.path.join(base_dir,'default_themes')  # Default themes directory
+        self.default_themes_dir = os.path.join(self.base_dir,'default_themes')  # Default themes directory
 
         self.default_themes = ['default_theme.txt','dark_theme.txt', 'light_theme.txt']
         self.current_theme = "default_theme.txt"
 
         print('------------------')
-        print(' Base Directory:', base_dir)
+        print(' Base Directory:', self.base_dir)
+        print(' Temporary Directory:', self.temp_dir)
         print(' Default Themes Directory:', self.default_themes_dir)
         print(' Theme Presets Directory:', self.theme_presets_dir)
         print('------------------')
@@ -185,11 +187,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Determine the base directory based on whether the app is running as a PyInstaller bundle
         if getattr(sys, 'frozen', False):
             temp_dir = sys._MEIPASS
-            base_dir = os.path.dirname(sys.executable)
+            self.base_dir = os.path.dirname(sys.executable)
             self.default_themes_dir = os.path.join(temp_dir, 'default_themes')
         else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            self.default_themes_dir = os.path.join(base_dir, 'default_themes')
+            self.base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.default_themes_dir = os.path.join(self.base_dir, 'default_themes')
 
         # Ensure the theme presets directory exists
         os.makedirs(self.theme_presets_dir, exist_ok=True)
@@ -237,11 +239,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Determine the base directory based on whether the app is running as a PyInstaller bundle
         if getattr(sys, 'frozen', False):
             temp_dir = sys._MEIPASS
-            base_dir = base_dir = os.path.dirname(sys.executable)
+            self.base_dir = self.base_dir = os.path.dirname(sys.executable)
             self.default_themes_dir = os.path.join(temp_dir, 'default_themes')
         else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            self.default_themes_dir = os.path.join(base_dir, 'default_themes')
+            self.base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.default_themes_dir = os.path.join(self.base_dir, 'default_themes')
 
 
         for theme_file in self.default_themes:
@@ -353,12 +355,29 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                             for selector, style in element_styles.items():
                                 style_sheet += f"{selector} {{{style}}}\n"
                             element.setStyleSheet(style_sheet)
+
                         elif element_name == "MainWindow":
                             # Apply style directly to the MainWindow
                             style_sheet = ""
                             for selector, style in element_styles.items():
-                                style_sheet += f"{selector} {{{style}}}\n"
+                                if selector == "window_icon":
+                                    if self.temp_dir : 
+                                        file_path = os.path.join(self.temp_dir, style)
+                                    else: 
+                                        file_path = os.path.join(self.base_dir, style)
+                                        print(file_path)
+                                    self.setWindowIcon(QtGui.QIcon(file_path))
+                                elif selector == "icon":
+                                    if self.temp_dir : 
+                                        file_path = os.path.join(self.temp_dir, style)
+                                    else: 
+                                        file_path = os.path.join(self.base_dir, style)
+                                    self.label.setText(f"<html><head/><body><p><img src=\"{file_path}\"/></p></body></html>")
+                                else:
+                                    style_sheet += f"{selector} {{{style}}}\n"
+
                             self.setStyleSheet(style_sheet)
+
                         elif dialog and element_name == "dialog_styles":
                             # Apply styles to the dialog if it matches the name in the theme file
                             style_sheet = ""

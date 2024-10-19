@@ -3,7 +3,7 @@
     "selected_session_row": 0,
     "randomize_settings": true,
     "auto_start_settings": false,
-    "theme_settings": "default_theme.txt",
+    "theme_settings": "light_theme.txt",
     "shortcuts": {
         "main_window": {
             "start": "S",
