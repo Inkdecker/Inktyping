@@ -1,6 +1,8 @@
 {
     "MainWindow": {
-        "QMainWindow": "background: rgb(240, 240, 240); color: black;"
+        "QMainWindow": "background: rgb(240, 240, 240); color: black;",
+        "window_icon": "ui/resources/icons/session_writing_light.png",
+        "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png"
     },
     "FileDialog": {
         "QFileDialog": "background: rgb(240, 240, 240); color: black;",

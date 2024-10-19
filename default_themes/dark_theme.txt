@@ -1,6 +1,10 @@
 {
     "MainWindow": {
-        "QMainWindow": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);"
+        "QMainWindow": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);",
+        "window_icon": "ui/resources/icons/session_writing_dark.png",
+        "icon": "ui/resources/icons/session_writing_transparent_dark_48x48.png"
+
+
     },
     "FileDialog": {
         "QFileDialog": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);",
@@ -37,11 +41,12 @@
         "QListView, QTreeView": "background: rgb(40, 40, 40); color: rgb(220, 220, 220);",
         "QLineEdit": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid transparent;",
         "QLineEdit:focus": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(220, 220, 220);",
+
         "QLabel": "color: rgb(255, 255, 255);",
         "QTextEdit": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid transparent;",
         "QTextEdit:focus": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(160, 160, 160);", 
-        "QCheckBox": "color: rgb(255, 255, 255);",
-        "QComboBox":"background: rgb(40, 40, 40); color: rgb(160, 160, 160); border: 1px solid rgb(160, 160, 160);"
+
+        "QCheckBox": "color: rgb(255, 255, 255);"
     },
     "labels": {
         "QLabel": "color: rgb(220, 220, 220);"
