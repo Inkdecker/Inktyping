@@ -576,6 +576,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             highlight_keywords = dialog.get_highlight_keywords_option()
             output_option = dialog.get_output_option()  # Get output option
 
+            preset_name = dialog.get_preset_name()  # Retrieve the preset name
+
             if not selected_dirs:
                 self.show_info_message('No Selection', 'No folders were selected.')
                 return
@@ -2664,6 +2666,7 @@ class MultiFolderSelector(QtWidgets.QDialog):
 
         # Ensure Enter triggers OK button
         self.ok_button.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.init_message_boxes()
 
     def get_highlight_keywords_option(self):
         """Returns whether the 'Highlight Keywords' checkbox is checked."""
@@ -2686,11 +2689,6 @@ class MultiFolderSelector(QtWidgets.QDialog):
         """Return the preset name entered by the user."""
         return self.preset_name_edit.text()
 
-    def init_message_boxes(self):
-        """Initialize custom message boxes (not fully implemented in the given code)."""
-        pass
-
-        
         
     def init_message_boxes(self):
         """Initialize custom message box settings."""
