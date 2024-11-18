@@ -63,7 +63,7 @@ Previous sentence | Left Arrow Key
 Stop | Esc 
 Pause | Spacebar
 Next sentence | Right Arrow Key, Return
-Copy sentence | C
+Copy sentence | Ctrl + C
 Open preset folder | O
 Delete sentence | Ctrl + D
 Open setting window | Tab
