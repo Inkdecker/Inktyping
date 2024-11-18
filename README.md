@@ -26,10 +26,10 @@ It can be used to either analyze text for research purposes or practice writing.
 
 Prefix | Result
 ------------ | -------------
-**Keyword** | search for both singular and plural forms
-**&Keyword** | search the given form
-**!Keyword** | ignore sentences with either singular or plural forms
-**!&Keyword** | ignore sentences with the given form
+**Keyword** | search for both singular and plural forms [Keyword and Keywords]
+**&Keyword** | search the given form [Keyword]
+**!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
+**!&Keyword** | ignore sentences with the given form [ignore Keyword]
 
 3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
 
