@@ -22,7 +22,9 @@ It can be used to either analyze text for research purposes or practice writing.
 
 1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
-2 - Enter the **keywords** you want to use to extract the sentences, you can also use **keywords** to ignore. The program will by default add or remove the letter [s] at the end of the given Keyword to create and search an additional form of the word. House --> House & Houses, Cars --> Car and Cars etc...
+2 - Enter the **keywords** you want to use to extract the sentences, you can also use **keywords** to ignore. The program will by default add or remove the letter [s] at the end of the given Keyword to create and search an additional form of the word. 
+
+	[House] --> [House] & [Houses], [Cars] --> [Car] & [Cars], etc...
 
 Prefix | Result
 ------------ | -------------
