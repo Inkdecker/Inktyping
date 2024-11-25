@@ -41,6 +41,13 @@ Prefix | Result
 
 5 - Click "OK", the extracted sentences will be stored inside the **text_preset/** folder, the sentences separated by an empty line.
 
+6 - Create or select a preset with the settings that you want to use for the session.
+
+7 - Click "Start" to begin the session.
+
+	Note: You can select "Randomize" to shuffle the pictures and "Start session" to automatically start the session whenever the program is launched.
+
+
 ## Troubleshooting 
 - Delete the **session_settings.txt** to reset settings and shortcuts.
 - Delete the **preset** folder and restart the executable to reset everything back to default.
