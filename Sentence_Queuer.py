@@ -64,7 +64,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 "close": "Escape",
                 "next_sentence": "Right",
                 "open_folder": "O",
-                "copy_path": "C",
+                "copy_path": "Ctrl+C",
                 "delete_sentence": "Ctrl+D",
                 "zoom_in": "Q",
                 "zoom_out": "D",
@@ -90,7 +90,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-        self.presets_dir = os.path.join(self.base_dir, 'presets')
+        self.presets_dir = os.path.join(self.base_dir, 'writing_presets')
         self.text_presets_dir = os.path.join(self.presets_dir, 'text_presets')
         self.session_presets_dir = os.path.join(self.presets_dir, 'session_presets')
         self.theme_presets_dir = os.path.join(self.presets_dir, 'theme_presets')  # New directory for themes
@@ -2720,12 +2720,13 @@ class MultiFolderSelector(QtWidgets.QDialog):
         return normalized_path  # If less than or equal, return as is
 
 
+        
     def multi_select_folders(self):
-
         file_dialog = QtWidgets.QFileDialog(self)
         file_dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
         file_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
         file_dialog.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
+
         file_view = file_dialog.findChild(QListView, 'listView')
         if file_view:
             file_view.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -2734,13 +2735,29 @@ class MultiFolderSelector(QtWidgets.QDialog):
         if f_tree_view:
             f_tree_view.setSelectionMode(QAbstractItemView.MultiSelection)
 
+        # Variable to store the last navigated directory
+        last_directory = None
+
+        def update_last_directory(directory):
+            nonlocal last_directory
+            last_directory = directory
+
+        file_dialog.directoryEntered.connect(update_last_directory)
+
         if file_dialog.exec():
             folders = file_dialog.selectedFiles()
-            for folder in folders:
+
+            # Filter out the parent directory if included mistakenly
+            filtered_folders = [
+                folder for folder in folders if folder != last_directory
+            ]
+
+            # Add the filtered folders to the selected list
+            for folder in filtered_folders:
                 if folder and folder not in self.selected_folders:
                     self.selected_folders.append(folder)
-                    formatted_path = self.format_folder_path(folder)  # Format the folder path
-                    self.list_widget.addItem(formatted_path)  # Add formatted path to the list
+                    formatted_path = self.format_folder_path(folder)
+                    self.list_widget.addItem(formatted_path)
 
     def remove_folder(self):
         selected_items = self.list_widget.selectedItems()

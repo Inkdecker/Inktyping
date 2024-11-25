@@ -288,8 +288,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>resources/icons/text.png</normaloff>resources/icons/text.png</iconset>
+          <iconset resource="resources/resources_config.qrc">
+           <normaloff>:/icons/icons/text.png</normaloff>:/icons/icons/text.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -532,8 +532,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>resources/icons/copy-icon.png</normaloff>resources/icons/copy-icon.png</iconset>
+          <iconset resource="resources/resources_config.qrc">
+           <normaloff>:/icons/icons/copy-icon.png</normaloff>:/icons/icons/copy-icon.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -576,8 +576,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>resources/icons/folder-icon.png</normaloff>resources/icons/folder-icon.png</iconset>
+          <iconset resource="resources/resources_config.qrc">
+           <normaloff>:/icons/icons/folder-icon.png</normaloff>:/icons/icons/folder-icon.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -620,8 +620,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>resources/icons/trash-can.png</normaloff>resources/icons/trash-can.png</iconset>
+          <iconset resource="resources/resources_config.qrc">
+           <normaloff>:/icons/icons/trash-can.png</normaloff>:/icons/icons/trash-can.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -664,8 +664,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset>
-           <normaloff>resources/icons/settings.png</normaloff>resources/icons/settings.png</iconset>
+          <iconset resource="resources/resources_config.qrc">
+           <normaloff>:/icons/icons/settings.png</normaloff>:/icons/icons/settings.png</iconset>
          </property>
          <property name="iconSize">
           <size>
