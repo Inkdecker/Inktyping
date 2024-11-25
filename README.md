@@ -22,6 +22,8 @@ It can be used to either analyze text for research purposes or practice writing.
 
 1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
+	Note : You can drag your favorite folders to the left column of the explorer to pin them for a quick access.
+
 2 - Enter the **keywords** you want to use to extract the sentences, you can also use **keywords** to ignore. The program will by default add or remove the letter [s] at the end of the given Keyword to create and search an additional form of the word. 
 
 	[House] --> [House] & [Houses], [Cars] --> [Car] & [Cars], etc...
