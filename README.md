@@ -22,11 +22,11 @@ It can be used to either analyze text for research purposes or practice writing.
 
 1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
-	Note : You can drag your favorite folders to the left column of the explorer to pin them for a quick access.
+> Note : You can drag your favorite folders to the left column of the explorer to pin them for a quick access.
 
 2 - Enter the **keywords** you want to use to extract the sentences, you can also use **keywords** to ignore. The program will by default add or remove the letter [s] at the end of the given Keyword to create and search an additional form of the word. 
 
-	[House] --> [House] & [Houses], [Cars] --> [Car] & [Cars], etc...
+> [House] --> [House] & [Houses], [Cars] --> [Car] & [Cars], etc...
 
 Prefix | Result
 ------------ | -------------
@@ -45,7 +45,7 @@ Prefix | Result
 
 7 - Click "Start" to begin the session.
 
-	Note: You can select "Randomize" to shuffle the pictures and "Start session" to automatically start the session whenever the program is launched.
+> Note: You can select "Randomize" to shuffle the pictures and "Start session" to automatically start the session whenever the program is launched using your latest settings.
 
 
 ## Troubleshooting 
