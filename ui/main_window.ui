@@ -216,8 +216,8 @@
    <string>Sentence Practice</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>resources/icons/session_writing.png</normaloff>resources/icons/session_writing.png</iconset>
+   <iconset resource="resources/resources_config.qrc">
+    <normaloff>:/icons/icons/session_writing.png</normaloff>:/icons/icons/session_writing.png</iconset>
   </property>
   <property name="windowOpacity">
    <double>4.000000000000000</double>

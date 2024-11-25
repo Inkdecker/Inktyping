@@ -1,10 +1,10 @@
 __pycache__/
 build/
 dist/
-presets/text_presets/
-presets/session_presets/
-presets/theme_presets/
-session_writing/presets/session_settings.txt
+writing_presets/text_presets/
+writing_presets/session_presets/
+writing_presets/theme_presets/
+session_writing/writing_presets/session_settings.txt
 Test folder/
 Test folder 2/
 Test folder 3/
