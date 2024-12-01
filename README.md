@@ -31,13 +31,17 @@ It can be used to either analyze text for research purposes or practice writing.
 
 > [House] --> [House] & [Houses], [Cars] --> [Car] & [Cars], etc...
 
+
 Prefix | Result
 ------------ | -------------
 **Keyword** | search for both singular and plural forms [Keyword and Keywords]
 **&Keyword** | search the given form [Keyword]
 **!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
-**@Name** | Highlight the name of characters using a different color [Name]
+**#Name** | highlight names
+**@Name** | search and highlight names
+**;Comments** | ignore line 
+
 
 3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
 
