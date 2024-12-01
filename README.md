@@ -17,7 +17,7 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
 
-##### Supported files :  .txt, .epubs, .pdf
+##### Supported files :  .txt, .epub, .pdf
 
 
 # Usage
