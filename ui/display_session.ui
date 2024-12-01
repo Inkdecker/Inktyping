@@ -42,8 +42,8 @@
    <string/>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>resources/icons/DARK-32x32.ico</normaloff>resources/icons/DARK-32x32.ico</iconset>
+   <iconset resource="resources/resources_config.qrc">
+    <normaloff>:/icons/icons/session_writing.png</normaloff>:/icons/icons/session_writing.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">background: rgb(0,0,0)</string>
