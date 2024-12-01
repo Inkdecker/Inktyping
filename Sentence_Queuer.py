@@ -586,7 +586,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 return
 
             # Prepare keywords from user input
-            keywords = [kw for kw in keyword_input if not kw.startswith('#')]  # Extract valid keywords
+            keywords = [kw for kw in keyword_input if not kw.startswith(';')]  # Extract valid keywords, ; used for comments
 
             # Process each selected directory
             for directory in selected_dirs:
@@ -610,21 +610,27 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def process_highlight_keywords(self, text, keywords):
         """Highlight all keywords based on their prefix while preserving the case in the original text."""
         modified_text = text  # Start with the original text
-
         for keyword in keywords:
-            # Determine highlight style based on prefix
+            # Determine highlight style and behavior based on prefix
+
             if keyword.startswith('@'):
                 base_keyword = keyword[1:]  # Remove '@' character
                 highlight_style = "[|{}|]"  # Special character highlight
+                extract = True  # Extract sentences containing this keyword
+            elif keyword.startswith('#'):
+                base_keyword = keyword[1:]  # Remove '#' character
+                highlight_style = "[|{}|]"  # Character color highlight
+                extract = False  # Do not extract sentences containing this keyword
             else:
                 base_keyword = keyword  # Use the keyword as is
                 highlight_style = "{{{}}}"  # Regular highlight
+                extract = True  # Default to extracting sentences
 
             # Get the singular and plural forms for highlighting
-            if keyword.startswith('@'):
-                keyword_forms = [base_keyword]  # Only the base keyword if it starts with '@'
+            if keyword.startswith('@') or keyword.startswith('#'):
+                keyword_forms = [base_keyword]  # Only the base keyword for '@' and '#'
             else:
-                keyword_forms = self.get_keyword_forms(base_keyword)  # Get forms for highlighting
+                keyword_forms = self.get_keyword_forms(base_keyword)  # Get forms for other keywords
 
             # Highlight the keyword(s) in the text, preserving the original case
             for form in keyword_forms:
@@ -805,7 +811,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Separate ignored keywords and process the rest
         ignored_keywords = [keyword for keyword in keywords if keyword.startswith('!')]
         keywords = [keyword for keyword in keywords if not keyword.startswith('!')]
-
+        print(444444444444444444444,keywords)
         # Dictionary to store sentences (using keywords with prefixes during search)
         combined_sentences = {keyword: [] for keyword in keywords}
 
@@ -2707,7 +2713,10 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "\"&Keyword\" : search the given form\n\n"
             "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
             "\"!&Keyword\" : ignore sentences with the given form\n\n"
-            "\"@Name\" : Highlight the name of characters using a different color"
+            "\"#Name\" : highlight names\n"
+            "\"@Name\" : search and highlight names\n\n"
+
+            "\";Comments\" : ignore line "
         )
         self.keyword_input.setMinimumHeight(100)  # Set a minimum height for the text input
         layout.addWidget(self.keyword_input)
