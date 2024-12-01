@@ -40,7 +40,7 @@ Prefix | Result
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
 **#Name** | highlight names
 **@Name** | search and highlight names
-**;Comments** | ignore line 
+**;Comment** | ignore line 
 
 
 3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
