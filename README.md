@@ -38,10 +38,16 @@ Prefix | Result
 **&Keyword** | search the given form [Keyword]
 **!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
+<<<<<<< Updated upstream
 **#Name** | highlight name
 **@Name** | search and highlight name
 **;Comment** | ignore line 
 
+=======
+**#Name** | highlight names
+**@Name** | search and highlight names
+**;Comments** | ignore line 
+>>>>>>> Stashed changes
 
 3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
 
