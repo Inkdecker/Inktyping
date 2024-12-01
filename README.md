@@ -14,8 +14,8 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Ability to select keywords to ignore
 	- 2 types of highlighting for both Names and Keywords
     - Ability to customize themes, highlight colors and shortcuts
-  - Autocopy sentences to clipboard
-  - Rich text copy
+	- Autocopy sentences to clipboard
+	- Rich text / Plain text copy
 
 ##### Supported files :  .txt, .epubs, .pdf
 
