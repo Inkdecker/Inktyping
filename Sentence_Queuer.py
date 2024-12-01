@@ -698,8 +698,10 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             return [self.get_singular_form(keyword), self.get_plural_form(keyword)]
 
     def extract_sentences_with_keywords(self, file_path, keywords, combined_sentences):
-        """Extract sentences containing the provided keywords from the file."""
-
+        """
+        Extract sentences containing the provided keywords from the file.
+        Ensure each sentence is added only once, even if it contains multiple keywords.
+        """
         def match_keywords(forms, sentence):
             """Check if any form of the keyword is found in the sentence."""
             for form in forms:
@@ -739,21 +741,23 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         full_text = re.sub(r'\n(?=\S)', ' ', full_text)  # Handle newlines within paragraphs
         sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', full_text)  # Split by sentence endings
 
-        # Filter sentences based on keywords (using keywords with prefixes)
-        for sentence in sentences:
-            for keyword in keywords:
+        # Maintain a set of unique sentences
+        unique_sentences = set()
 
+        # Iterate through each sentence and keyword
+        for sentence in sentences:
+            sentence_cleaned = self.replace_broken_characters(sentence.strip())  # Clean broken characters
+            for keyword in keywords:
                 # Get keyword forms (singular and plural)
                 forms = self.get_keyword_forms(keyword)
-                if match_keywords(forms, sentence):
-                    # Truncate sentence around the keyword
-                    cleaned_sentence = self.truncate_sentence_around_keyword(sentence, keyword)
+                if match_keywords(forms, sentence_cleaned):
+                    # Add the sentence to the unique set and break to avoid duplicate addition
+                    if sentence_cleaned not in unique_sentences:
+                        combined_sentences[keyword].append(sentence_cleaned)
+                        unique_sentences.add(sentence_cleaned)
+                    break  # Exit the keyword loop once the sentence is added
 
-                    # Clean broken characters in the sentence
-                    cleaned_sentence = self.replace_broken_characters(cleaned_sentence.strip())
-
-                    # Store the cleaned sentence (with prefixes)
-                    combined_sentences[keyword].append(cleaned_sentence)
+        print(f"Extracted {len(unique_sentences)} unique sentences.")
 
     def truncate_sentence(self, sentence, max_length=200):
             """Truncate the sentence at the last full word before exceeding the max length."""
@@ -811,15 +815,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Separate ignored keywords and process the rest
         ignored_keywords = [keyword for keyword in keywords if keyword.startswith('!')]
         keywords = [keyword for keyword in keywords if not keyword.startswith('!')]
-<<<<<<< Updated upstream
 
         # Remove duplicates by converting the list of keywords to a set and back to a list
         keywords = list(set(keywords))
         print("Unique keywords:", keywords)
 
-=======
-        print(444444444444444444444,keywords)
->>>>>>> Stashed changes
         # Dictionary to store sentences (using keywords with prefixes during search)
         combined_sentences = {keyword: [] for keyword in keywords}
 
@@ -1619,7 +1619,8 @@ class SessionDisplay(QWidget, Ui_session_display):
             "font_color": "black",    # Default font color
 
 
-            "font_size_lineedit": 30,         # Default font size
+            "font_size_lineedit": 30,  # Default font size
+            "max_length_lineedit": 300  # Default max length
 
         }
 
@@ -1629,6 +1630,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.always_on_top_borde_settings = "rgb(255, 0, 0)"
 
         self.text_display.setWordWrap(True)  # Enable word wrapping for the QLabel
+        self.lineEdit.setMaxLength(self.text_display_settings["max_length_lineedit"])
 
 
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
@@ -2414,6 +2416,7 @@ class SessionDisplay(QWidget, Ui_session_display):
             self.copy_sentence()
 
         self.lineEdit.clear()
+        self.lineEdit.setFocus() 
         self.update_session_info()
 
         # If there are any other buttons to untoggle, add them here
@@ -2437,6 +2440,7 @@ class SessionDisplay(QWidget, Ui_session_display):
             self.copy_sentence()
 
         self.lineEdit.clear()
+        self.lineEdit.setFocus() 
         self.update_session_info()
 
 
@@ -2722,17 +2726,10 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "\"&Keyword\" : search the given form\n\n"
             "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
             "\"!&Keyword\" : ignore sentences with the given form\n\n"
-<<<<<<< Updated upstream
             "\"#Name\" : highlight name\n"
             "\"@Name\" : search and highlight name\n\n"
 
             "\";Comment\" : ignore line "
-=======
-            "\"#Name\" : highlight names\n"
-            "\"@Name\" : search and highlight names\n\n"
-
-            "\";Comments\" : ignore line "
->>>>>>> Stashed changes
         )
         self.keyword_input.setMinimumHeight(100)  # Set a minimum height for the text input
         layout.addWidget(self.keyword_input)

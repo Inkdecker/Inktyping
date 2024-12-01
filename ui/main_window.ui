@@ -1382,7 +1382,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>&lt;p style=&quot;color:black&quot;&gt; Copy current sentence to clipboard if selected.&lt;/p&gt;</string>
+           <string>&lt;p style=&quot;color:black&quot;&gt; Automatically copy sentences to clipboard if selected.&lt;/p&gt;</string>
           </property>
           <property name="text">
            <string>Clipboard</string>
