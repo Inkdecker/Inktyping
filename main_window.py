@@ -589,7 +589,7 @@ class Ui_MainWindow(object):
         item = self.table_session_selection.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Session presets"))
         self.start_session_button.setText(_translate("MainWindow", "Start"))
-        self.clipboard_toggle.setToolTip(_translate("MainWindow", "<p style=\"color:black\"> Copy current sentence to clipboard if selected.</p>"))
+        self.clipboard_toggle.setToolTip(_translate("MainWindow", "<p style=\"color:black\"> Automatically copy sentences to clipboard if selected.</p>"))
         self.clipboard_toggle.setText(_translate("MainWindow", "Clipboard"))
         self.close_window_button.setText(_translate("MainWindow", "Close"))
         self.auto_start_toggle.setToolTip(_translate("MainWindow", "<p style=\"color:black\">Automatically start session on next launch if selected instead of opening the menu window.</p>"))
