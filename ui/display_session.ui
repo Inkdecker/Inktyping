@@ -547,6 +547,41 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="clipboard_button">
+         <property name="minimumSize">
+          <size>
+           <width>40</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background: rgb(130, 130, 130);</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="resources/resources_config.qrc">
+           <normaloff>:/icons/icons/clipboard-icon.png</normaloff>:/icons/icons/clipboard-icon.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>15</width>
+           <height>15</height>
+          </size>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="open_folder_button">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">

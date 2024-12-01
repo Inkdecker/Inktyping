@@ -1,8 +1,9 @@
 {
-    "selected_sentence_row": 0,
+    "selected_sentence_row": 2,
     "selected_session_row": 0,
     "randomize_settings": false,
     "auto_start_settings": false,
+    "clipboard_settings": true,
     "theme_settings": "default_theme.txt",
     "shortcuts": {
         "main_window": {
@@ -18,7 +19,9 @@
             "close": "Escape",
             "next_sentence": "Right",
             "open_folder": "O",
-            "copy_path": "Ctrl+C",
+            "copy_plain_text": "C",
+            "copy_highlighted_text": "Ctrl+C",
+            "toggle_clipboard": "Shift+C",
             "delete_sentence": "Ctrl+D",
             "zoom_in": "Q",
             "zoom_out": "D",
