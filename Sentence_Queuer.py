@@ -811,7 +811,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Separate ignored keywords and process the rest
         ignored_keywords = [keyword for keyword in keywords if keyword.startswith('!')]
         keywords = [keyword for keyword in keywords if not keyword.startswith('!')]
-        print(444444444444444444444,keywords)
+
+        # Remove duplicates by converting the list of keywords to a set and back to a list
+        keywords = list(set(keywords))
+        print("Unique keywords:", keywords)
+
         # Dictionary to store sentences (using keywords with prefixes during search)
         combined_sentences = {keyword: [] for keyword in keywords}
 
@@ -854,6 +858,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     with open(output_file_path, 'w', encoding='utf-8') as output_file:  # Ensure UTF-8 encoding
                         output_file.write('\n\n'.join(sentences) + '\n\n')
             print(f"Sentences saved to individual files for each keyword.")
+
 
 
     def contains_ignored_keyword(self, sentence, ignored_keywords):

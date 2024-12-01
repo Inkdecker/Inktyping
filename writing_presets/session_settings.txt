@@ -1,5 +1,5 @@
 {
-    "selected_sentence_row": 4,
+    "selected_sentence_row": -1,
     "selected_session_row": 0,
     "randomize_settings": true,
     "auto_start_settings": true,

@@ -30,7 +30,7 @@ class Ui_session_display(object):
         session_display.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         session_display.setWindowTitle("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("C:\\Users\\Adamska\\Desktop\\ART TUTORIALS\\SHORTCUTS & STUFF\\session_writing\\ui\\resources/icons/DARK-32x32.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/icons/session_writing.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         session_display.setWindowIcon(icon)
         session_display.setStyleSheet("background: rgb(0,0,0)")
         self.verticalLayout = QtWidgets.QVBoxLayout(session_display)
