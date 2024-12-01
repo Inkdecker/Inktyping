@@ -63,8 +63,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 "pause_timer": "Space",
                 "close": "Escape",
                 "next_sentence": "Right",
-                "open_folder": "O",
-                "copy_path": "Ctrl+C",
+                "copy_plain_text": "C",
+                "copy_highlighted_text": "Ctrl+C",
+                "toggle_clipboard": "Shift+C",
                 "delete_sentence": "Ctrl+D",
                 "zoom_in": "Q",
                 "zoom_out": "D",
@@ -112,7 +113,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         
         # Initialize the randomize_settings variable or False depending on your default
-        self.randomize_settings = True  
+        self.randomize_settings = True 
+        self.clipboard_settings = False  
         self.auto_start_settings = False
 
         # Initialize cache variables
@@ -308,6 +310,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Toggles
         self.randomize_toggle.stateChanged.connect(self.update_randomize_settings)
+        self.clipboard_toggle.stateChanged.connect(self.update_clipboard_settings)
         self.auto_start_toggle.stateChanged.connect(self.update_auto_start_settings)
 
         # Table selection handlers
@@ -491,7 +494,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     for selector, style in checkbox_styles.items():
                         style_sheet += f"{selector} {{{style}}}\n"
                     # Assuming self has checkboxes that need styling
-                    for checkbox_name in ["auto_start_toggle", "randomize_toggle"]:
+                    for checkbox_name in ["auto_start_toggle", "randomize_toggle","clipboard_toggle"]:
                         if hasattr(self, checkbox_name):
                             checkbox = getattr(self, checkbox_name)
                             checkbox.setStyleSheet(style_sheet)
@@ -502,7 +505,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                         "grid_button", "toggle_highlight_button", "toggle_text_button",
                         "flip_horizontal_button", "flip_vertical_button",
                         "previous_sentence", "pause_timer", "stop_session",
-                        "next_sentence", "copy_sentence_button",
+                        "next_sentence", "copy_sentence_button", "clipboard_button",
                         "open_folder_button", "delete_sentence_button", "show_main_window_button"
                     ]
                     for button_name in button_names:
@@ -1189,7 +1192,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Count the number of empty lines in the text file
                 empty_line_count = 0
                 file_path = os.path.join(self.text_presets_dir, filename)
-                with open(file_path, 'r') as file:
+                with open(file_path, 'r', encoding='utf-8') as file:
                     for line in file:
                         if line.strip() == "":  # Check for empty line
                             empty_line_count += 1
@@ -1378,7 +1381,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             shortcuts=self.shortcut_settings,
             schedule=self.session_schedule,
             items=selected_sentences,  
-            total=self.total_scheduled_sentences
+            total=self.total_scheduled_sentences,
+            clipboard_settings=self.clipboard_settings
         )
         self.init_styles(session=self.display)
 
@@ -1399,6 +1403,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "selected_session_row": -1,
             "randomize_settings": False,
             "auto_start_settings": False,
+            "clipboard_settings": False,
             "theme_settings": 'default_theme.txt',
             "shortcuts": self.default_shortcuts
         }
@@ -1425,11 +1430,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.shortcut_settings = current_settings.get('shortcuts', self.default_shortcuts)
         self.randomize_settings = current_settings.get('randomize_settings', False)
         self.auto_start_settings = current_settings.get('auto_start_settings', False)
+        self.clipboard_settings = current_settings.get('clipboard_settings', False)
         self.current_theme = current_settings.get('theme_settings', 'default_theme.txt')
 
         # Toggle the randomize and auto-start settings
         self.randomize_toggle.setChecked(self.randomize_settings)  # Toggle based on loaded value
         self.auto_start_toggle.setChecked(self.auto_start_settings)  # Toggle based on loaded value
+        self.clipboard_toggle.setChecked(self.clipboard_settings)  # Toggle based on loaded value
 
         # --- Row selection logic ---
         selected_sentence_row = current_settings.get('selected_sentence_row', -1)
@@ -1460,6 +1467,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "selected_session_row": self.table_session_selection.currentRow(),
             "randomize_settings": self.randomize_settings,
             "auto_start_settings": self.auto_start_settings,
+            "clipboard_settings": self.clipboard_settings,
             "theme_settings": self.current_theme,
             "shortcuts": self.shortcut_settings
         }
@@ -1524,7 +1532,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         print("Shortcuts reset to defaults.")
 
 
-    
+    def update_clipboard_settings(self, state):
+        """Update the clipboard_settings variable based on the checkbox state."""
+        # Check if the checkbox is checked (Qt.Checked is 2, Qt.Unchecked is 0)
+        if state == Qt.Checked:
+            self.clipboard_settings = True
+        else:
+            self.clipboard_settings = False
 
     def update_randomize_settings(self, state):
         """Update the randomize_settings variable based on the checkbox state."""
@@ -1574,7 +1588,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 class SessionDisplay(QWidget, Ui_session_display):
     closed = QtCore.pyqtSignal() # Needed here for close event to work.
 
-    def __init__(self, file_path = None, shortcuts = None, schedule=None, items=None, total=None):
+    def __init__(self, file_path = None, shortcuts = None, schedule=None, items=None, total=None, clipboard_settings=None):
         super().__init__()
         self.setupUi(self)
 
@@ -1637,15 +1651,14 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         # Connect the resize event to update the border overlay
         self.setMinimumSize(QtCore.QSize(550, 200))
+        self.clipboard_settings = clipboard_settings
 
     def resizeEvent(self, event):
         super(SessionDisplay, self).resizeEvent(event)
         # Adjust the grid overlay to match the new image size and position
         self.grid_overlay.setGeometry(self.image_display.geometry())
         
-        # Reapply the grid if it's currently displayed
-        if self.grid_displayed:
-            self.apply_grid()
+
 
 
     def mousePressEvent(self, event):
@@ -1693,18 +1706,70 @@ class SessionDisplay(QWidget, Ui_session_display):
         else:
             super(SessionDisplay, self).keyPressEvent(event)  # Call base class method
 
-    def copy_sentence(self):
-        # Retrieve the current sentence from the playlist
+
+    def copy_sentence(self, rich_text=True):
+        """Copy the current sentence to the clipboard, with or without rich text."""
+        # Retrieve the current sentence
         current_sentence = self.playlist[self.playlist_position].strip()
 
-        # Remove the brackets for highlights: {} and [| |], but keep the content inside
-        cleaned_sentence = re.sub(r'\{\s*(.*?)\s*\}|\[\|\s*(.*?)\s*\|\]', r'\1\2', current_sentence)
+        if rich_text:
+            # Extract color styles from the settings (Ensure proper extraction of RGB values)
+            keyword_color = re.search(r"color:\s*rgb\((.*?)\)", self.highlight_keywords_settings)
+            name_color = re.search(r"color:\s*rgb\((.*?)\)", self.highlight_names_settings)
+            
+            # Fallback colors if extraction fails
+            keyword_color = [int(c) for c in keyword_color.group(1).split(",")] if keyword_color else [255, 165, 0]  # Default: orange
+            name_color = [int(c) for c in name_color.group(1).split(",")] if name_color else [0, 0, 255]  # Default: blue
 
-        # Copy the cleaned sentence to the clipboard
-        clipboard = QApplication.clipboard()
-        clipboard.setText(cleaned_sentence)
+            # Prepare HTML-style formatting for rich text using inline CSS for color
+            highlighted_sentence = re.sub(
+                r'\{\s*(.*?)\s*\}', 
+                fr'<span style="color:rgb({keyword_color[0]},{keyword_color[1]},{keyword_color[2]})">\1</span>',
+                current_sentence
+            )
+            highlighted_sentence = re.sub(
+                r'\[\|\s*(.*?)\s*\|\]', 
+                fr'<span style="color:rgb({name_color[0]},{name_color[1]},{name_color[2]})">\1</span>',
+                highlighted_sentence
+            )
 
-        print(f"Copied sentence: {cleaned_sentence}")
+            # Create a mime data object with both plain text and HTML content
+            clipboard = QApplication.clipboard()
+            mime_data = QtCore.QMimeData()
+
+            # Set the HTML content using inline CSS for the highlighting
+            mime_data.setData('text/html', f"<p>{highlighted_sentence}</p>".encode('utf-8'))
+
+            # Set the plain text content (without any brackets or highlights)
+            plain_text = re.sub(r'\{\s*(.*?)\s*\}|\[\|\s*(.*?)\s*\|\]', r'\1\2', current_sentence)
+            mime_data.setText(plain_text)
+
+            # Set the mime data to the clipboard
+            clipboard.setMimeData(mime_data)
+            print(f"Copied Rich Text (HTML): <p>{highlighted_sentence}</p>")
+
+        else:
+            # For plain text, remove brackets and highlights
+            clipboard_text = re.sub(r'\{\s*(.*?)\s*\}|\[\|\s*(.*?)\s*\|\]', r'\1\2', current_sentence)
+
+            # Copy to clipboard as plain text (with no brackets or highlights)
+            clipboard = QApplication.clipboard()
+            clipboard.setText(clipboard_text)
+            print(f"Copied Plain Text: {clipboard_text}")
+
+
+
+
+    def toggle_clipboard(self):
+        if self.clipboard_settings:
+            self.clipboard_settings = False
+            self.clipboard_button.setChecked(False)
+            print("Auto copy to clipboard : Off")
+        else:
+            self.clipboard_settings = True
+            self.clipboard_button.setChecked(True)
+            print("Auto copy to clipboard : On")
+
 
 
 
@@ -1870,7 +1935,12 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         # Preset path and folder
         self.copy_sentence_button.clicked.connect(self.copy_sentence)
-        self.copy_sentence_button.setToolTip(f"[{self.shortcuts['session_window']['copy_path']}] Copy sentence path to clipboard")
+        self.copy_sentence_button.setToolTip(f"[{self.shortcuts['session_window']['copy_highlighted_text']}] Copy sentence to clipboard")
+
+        self.clipboard_button.clicked.connect(self.toggle_clipboard)
+        self.clipboard_button.setToolTip(f"[{self.shortcuts['session_window']['toggle_clipboard']}] Automatically copy current sentence to clipboard")
+
+
 
         self.open_folder_button.clicked.connect(self.open_text_folder)
         self.open_folder_button.setToolTip(f"[{self.shortcuts['session_window']['open_folder']}] Open preset folder")
@@ -1917,12 +1987,20 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.open_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["open_folder"]), self)
         self.open_key.activated.connect(self.open_text_folder)
 
-        self.copy_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_path"]), self)
-        self.copy_key.activated.connect(self.copy_sentence)
+        # Shortcut for copying as rich text (Ctrl+C)
+        self.copy_rich_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_plain_text"]), self)
+        self.copy_rich_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=False))
+
+        # Shortcut for copying as plain text (C)
+        self.copy_plain_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_highlighted_text"]), self)
+        self.copy_plain_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=True))
+
+        self.clipboard_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["toggle_clipboard"]), self)
+        self.clipboard_key.activated.connect(self.toggle_clipboard)
+
 
         self.delete_sentence_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["delete_sentence"]), self)
         self.delete_sentence_key.activated.connect(self.remove_sentence)
-
 
 
 
@@ -2292,6 +2370,13 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.time_seconds = self.entry['time']
         self.timer.start(500)
         self.entry['amount of items'] = int(self.schedule[self.entry['current']][1]) - 1
+        if self.clipboard_settings == True:
+            self.copy_sentence()
+            self.clipboard_button.setChecked(True)
+
+
+
+
         self.display_sentence()
 
     def load_next_sentence(self):
@@ -2310,6 +2395,10 @@ class SessionDisplay(QWidget, Ui_session_display):
         else:
             self.display_end_screen()  # Display end screen when at the end
 
+        if self.clipboard_settings == True:
+            self.copy_sentence()
+
+        self.lineEdit.clear()
         self.update_session_info()
 
         # If there are any other buttons to untoggle, add them here
@@ -2328,7 +2417,11 @@ class SessionDisplay(QWidget, Ui_session_display):
             self.display_sentence()  # Display the previous sentence
         else:
             return  # Do nothing if at the start of the playlist
-        
+
+        if self.clipboard_settings :
+            self.copy_sentence()
+
+        self.lineEdit.clear()
         self.update_session_info()
 
 
@@ -2613,7 +2706,8 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "\"Keyword\" : search for both singular and plural forms\n"
             "\"&Keyword\" : search the given form\n\n"
             "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
-            "\"!&Keyword\" : ignore sentences with the given form"
+            "\"!&Keyword\" : ignore sentences with the given form\n\n"
+            "\"@Name\" : Highlight the name of characters using a different color"
         )
         self.keyword_input.setMinimumHeight(100)  # Set a minimum height for the text input
         layout.addWidget(self.keyword_input)

@@ -14,6 +14,9 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Ability to select keywords to ignore
 	- 2 types of highlighting for both Names and Keywords
     - Ability to customize themes, highlight colors and shortcuts
+  - Autocopy sentences to clipboard
+  - Rich text copy
+
 ##### Supported files :  .txt, .epubs, .pdf
 
 
@@ -34,6 +37,7 @@ Prefix | Result
 **&Keyword** | search the given form [Keyword]
 **!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
+**@Name** | Highlight the name of characters using a different color [Name]
 
 3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
 
@@ -74,7 +78,9 @@ Previous sentence | Left Arrow Key
 Stop | Esc 
 Pause | Spacebar
 Next sentence | Right Arrow Key, Return
-Copy sentence | Ctrl + C
+Copy sentence [Plain text] | C
+Copy sentence [Rich text] | Ctrl + C
+Toggle autocopy to clipboard | Shift + C
 Open preset folder | O
 Delete sentence | Ctrl + D
 Open setting window | Tab

@@ -1320,7 +1320,7 @@
     <item>
      <layout class="QGridLayout" name="gridLayout_5">
       <property name="leftMargin">
-       <number>218</number>
+       <number>160</number>
       </property>
       <property name="bottomMargin">
        <number>10</number>
@@ -1331,64 +1331,28 @@
       <property name="verticalSpacing">
        <number>0</number>
       </property>
-      <item row="3" column="1">
-       <layout class="QGridLayout" name="gridLayout_6">
+      <item row="3" column="0" colspan="2">
+       <layout class="QGridLayout" name="gridLayout_6" rowstretch="0">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetDefaultConstraint</enum>
+        </property>
         <property name="topMargin">
          <number>25</number>
         </property>
         <property name="bottomMargin">
          <number>0</number>
         </property>
+        <property name="horizontalSpacing">
+         <number>0</number>
+        </property>
         <item row="0" column="4">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <property name="leftMargin">
-           <number>5</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="close_window_button">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background: rgb(220,220,220); color: 'black';</string>
-            </property>
-            <property name="text">
-             <string>Close</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="randomize_toggle">
+         <widget class="QPushButton" name="start_session_button">
           <property name="maximumSize">
            <size>
-            <width>200</width>
-            <height>50</height>
+            <width>80</width>
+            <height>16777215</height>
            </size>
           </property>
-          <property name="baseSize">
-           <size>
-            <width>50</width>
-            <height>200</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>&lt;p style=&quot;color:black&quot;&gt;Display the images randomly if selected.&lt;/p&gt;</string>
-          </property>
-          <property name="text">
-           <string>Randomize</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="start_session_button">
           <property name="toolTip">
            <string/>
           </property>
@@ -1403,6 +1367,57 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="2">
+         <widget class="QCheckBox" name="clipboard_toggle">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>&lt;p style=&quot;color:black&quot;&gt; Copy current sentence to clipboard if selected.&lt;/p&gt;</string>
+          </property>
+          <property name="text">
+           <string>Clipboard</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="6">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="leftMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="close_window_button">
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background: rgb(220,220,220); color: 'black';</string>
+            </property>
+            <property name="text">
+             <string>Close</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item row="0" column="0">
          <widget class="QCheckBox" name="auto_start_toggle">
           <property name="maximumSize">
@@ -1416,6 +1431,31 @@
           </property>
           <property name="text">
            <string>Start session</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QCheckBox" name="randomize_toggle">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>&lt;p style=&quot;color:black&quot;&gt;Display the images randomly if selected.&lt;/p&gt;</string>
+          </property>
+          <property name="text">
+           <string>Randomize</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
