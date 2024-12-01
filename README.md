@@ -50,6 +50,7 @@ Prefix | Result
 7 - Click "Start" to begin the session.
 
 > Note: You can select "Randomize" to shuffle the pictures and "Start session" to automatically start the session whenever the program is launched using your latest settings.
+> 
 > Note: You can select "Clipboard" to automatically copy the sentences to the clipboard.
 
 
