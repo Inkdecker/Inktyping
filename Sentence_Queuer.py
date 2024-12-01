@@ -811,11 +811,15 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Separate ignored keywords and process the rest
         ignored_keywords = [keyword for keyword in keywords if keyword.startswith('!')]
         keywords = [keyword for keyword in keywords if not keyword.startswith('!')]
+<<<<<<< Updated upstream
 
         # Remove duplicates by converting the list of keywords to a set and back to a list
         keywords = list(set(keywords))
         print("Unique keywords:", keywords)
 
+=======
+        print(444444444444444444444,keywords)
+>>>>>>> Stashed changes
         # Dictionary to store sentences (using keywords with prefixes during search)
         combined_sentences = {keyword: [] for keyword in keywords}
 
@@ -2718,10 +2722,17 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "\"&Keyword\" : search the given form\n\n"
             "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
             "\"!&Keyword\" : ignore sentences with the given form\n\n"
+<<<<<<< Updated upstream
             "\"#Name\" : highlight name\n"
             "\"@Name\" : search and highlight name\n\n"
 
             "\";Comment\" : ignore line "
+=======
+            "\"#Name\" : highlight names\n"
+            "\"@Name\" : search and highlight names\n\n"
+
+            "\";Comments\" : ignore line "
+>>>>>>> Stashed changes
         )
         self.keyword_input.setMinimumHeight(100)  # Set a minimum height for the text input
         layout.addWidget(self.keyword_input)
