@@ -1611,6 +1611,10 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.setWindowTitle('Practice')
 
 
+        # Install event filter on the QLineEdit
+        self.lineEdit.installEventFilter(self)
+
+
         # Initialize text settings dictionary with default values
         self.text_display_settings = {
             "font_size": 16,         # Default font size
@@ -1620,7 +1624,7 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
             "font_size_lineedit": 30,  # Default font size
-            "max_length_lineedit": 300  # Default max length
+            "max_length_lineedit": 500  # Default max length
 
         }
 
@@ -1675,6 +1679,13 @@ class SessionDisplay(QWidget, Ui_session_display):
         # Adjust the grid overlay to match the new image size and position
         self.grid_overlay.setGeometry(self.image_display.geometry())
         
+    def eventFilter(self, source, event):
+        if source == self.lineEdit and event.type() == QtCore.QEvent.KeyPress:
+            if event.key() == QtCore.Qt.Key_Backspace and event.modifiers() == QtCore.Qt.ShiftModifier:
+                self.load_prev_sentence()  # Navigate to the previous sentence
+                self.lineEdit.clear()  # Optionally clear the input field
+                return True  # Indicate that the event has been handled
+        return super().eventFilter(source, event)
 
 
 
@@ -1716,8 +1727,12 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
     def keyPressEvent(self, event):
-        """Handle key press events for the QLineEdit."""
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+        """Handle key press events for navigation and input."""
+        # Check for Shift + Backspace
+        if event.key() == Qt.Key_Backspace and event.modifiers() == Qt.ShiftModifier:
+            self.load_prev_sentence()  # Logic to go to the previous sentence
+            self.lineEdit.clear()  # Clear the text in the QLineEdit if desired
+        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.load_next_sentence()  # Logic to go to the next sentence
             self.lineEdit.clear()  # Clear the text in the QLineEdit
         else:
