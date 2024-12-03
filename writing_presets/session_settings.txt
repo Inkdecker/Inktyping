@@ -1,9 +1,9 @@
 {
-    "selected_sentence_row": 2,
+    "selected_sentence_row": 3,
     "selected_session_row": 0,
-    "randomize_settings": true,
+    "randomize_settings": false,
     "auto_start_settings": true,
-    "clipboard_settings": true,
+    "clipboard_settings": false,
     "theme_settings": "default_theme.txt",
     "shortcuts": {
         "main_window": {
@@ -13,6 +13,7 @@
         "session_window": {
             "toggle_highlight": "G",
             "toggle_text_field": "T",
+            "color_window": "F1",
             "always_on_top": "A",
             "prev_sentence": "Left",
             "pause_timer": "Space",
