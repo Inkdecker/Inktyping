@@ -3,7 +3,7 @@ import sys
 import subprocess
 import random
 import shelve
-
+import math
 # Text stuff
 import re
 import codecs
@@ -40,6 +40,10 @@ import sip
 from send2trash import send2trash
 
 
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QColorDialog, QWidget
+from PyQt5.QtGui import QColor
+from PyQt5.QtCore import Qt
+
 
 class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None, show_main_window=False):
@@ -58,6 +62,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "session_window": {
                 "toggle_highlight": "G",
                 "toggle_text_field": "T",
+                "color_window": "F1",
                 "always_on_top": "A",
                 "prev_sentence": "Left",
                 "pause_timer": "Space",
@@ -323,8 +328,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-
-    def init_styles(self, dialog=None, dialog_grid=None, session=None):
+    def init_styles(self, dialog=None, dialog_color=None, session=None):
         """
         Initialize custom styles for various UI elements including buttons, spin boxes,
         table widgets, checkboxes, dialogs, and the main window. Optionally apply styles
@@ -333,6 +337,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Load the selected theme file
         selected_theme_path = os.path.join(self.theme_presets_dir, self.current_theme)
+        print('NOW LOADING THEME : ',selected_theme_path)
         if selected_theme_path:
             try:
                 with open(selected_theme_path, 'r') as f:
@@ -388,12 +393,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                                 style_sheet += f"{selector} {{{style}}}\n"
                             dialog.setStyleSheet(style_sheet)
 
-                        elif dialog_grid and element_name == "GridSettingsDialog":
-                            # Apply styles specifically to GridSettingsDialog
+                        elif dialog_color and element_name == "ColorPickerDialog":
+                            # Apply styles specifically to ColorPickerDialog
                             style_sheet = ""
                             for selector, style in element_styles.items():
                                 style_sheet += f"{selector} {{{style}}}\n"
-                            dialog_grid.setStyleSheet(style_sheet)
+                            dialog_color.setStyleSheet(style_sheet)
+
 
                         elif session and element_name == "session_display":
                             # Apply style to session_display if it matches the name in the theme file
@@ -409,17 +415,22 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                         elif session and element_name == "text_display":
                             # Apply style to text_display if it matches the name in the theme file
                             style_sheet = ""
+                            
                             for selector, style in element_styles.items():
-                                if selector == "highlight_names":
-                                    session.highlight_names_settings=style
-                                elif selector == "highlight_keywords":   
-                                    session.highlight_keywords_settings=style
+                                if selector == "text_color":
+                                    session.color_settings[selector]=style
+
+                                elif "highlight_color_" in selector:
+                                    session.color_settings[selector] = style
+
+
                                 elif selector == "always_on_top_border":   
-                                    session.always_on_top_borde_settings=style
+                                    session.color_settings["always_on_top_border"]=style
                                 else:
                                     style_sheet += f"{selector} {{{style}}}\n"
                                 if hasattr(session, 'text_display'):
                                     session.text_display.setStyleSheet(style_sheet)
+
 
                         elif session and element_name == "lineEdit":
                             # Apply style to text_display if it matches the name in the theme file
@@ -502,7 +513,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 if session and "session_buttons" in styles_dict:
                     button_styles = styles_dict["session_buttons"]
                     button_names = [
-                        "grid_button", "toggle_highlight_button", "toggle_text_button",
+                        "grid_button", "toggle_highlight_button","color_text_button", "toggle_text_button",
                         "flip_horizontal_button", "flip_vertical_button",
                         "previous_sentence", "pause_timer", "stop_session",
                         "next_sentence", "copy_sentence_button", "clipboard_button",
@@ -562,10 +573,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
+
+
     def open_folder(self):
         """
-        Opens a dialog for folder selection, extracts keywords from user input, 
-        and processes all EPUB, PDF, and TXT files within the selected folders.
+        Opens a dialog for folder selection, collects keyword profiles, and processes all EPUB, PDF, and TXT files 
+        within the selected folders using the chosen profiles.
         """
         self.update_selection_cache()
         preset_name = f'preset_{self.get_next_preset_number()}'
@@ -575,7 +588,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             selected_dirs = dialog.get_selected_folders()
-            keyword_input = dialog.get_keyword_input()  # Get the keyword input from user (already a list)
             highlight_keywords = dialog.get_highlight_keywords_option()
             output_option = dialog.get_output_option()  # Get output option
 
@@ -585,19 +597,38 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.show_info_message('No Selection', 'No folders were selected.')
                 return
 
-            # Prepare keywords from user input
-            keywords = [kw for kw in keyword_input if not kw.startswith(';')]  # Extract valid keywords, ; used for comments
 
+
+            keyword_profiles = dialog.get_all_keyword_profiles()   # Assuming this method processes keywords into profiles
             # Process each selected directory
             for directory in selected_dirs:
                 if os.path.isdir(directory):
-                    # Process the folder with keywords, highlight option, and output option
-                    self.process_epub_folder(directory, keywords, highlight_keywords, output_option, preset_name)
+                    # Process the folder with keyword profiles, highlight option, and output option
+                    self.process_epub_folder(directory, keyword_profiles, highlight_keywords, output_option, preset_name)
 
             self.show_info_message('Success', f'Processed all selected folders and saved to text_presets.')
 
         self.load_presets()
 
+    def create_keyword_profiles(self, keyword_input):
+        """
+        Creates keyword profiles based on the user input.
+        """
+        profiles = []
+        for kw in keyword_input:
+            if not kw.startswith(';'):  # Ignore comments (those starting with ;)
+                profile = self.create_single_keyword_profile(kw)  # Use a method to create a single keyword profile
+                profiles.append(profile)
+        return profiles
+
+    def create_single_keyword_profile(self, keyword):
+        """
+        Creates a single keyword profile.
+        Modify this method based on how you want each keyword profile to be structured.
+        """
+        # Example of simple profile creation
+        return {'keyword': keyword, 'options': {'highlight': True}}  # Customize as necessary
+
 
 
 
@@ -606,45 +637,168 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 ########################################## TEXT PARSING ##########################################
 ########################################## TEXT PARSING ##########################################
 
+    def process_epub_folder(self, folder_path, profiles, highlight_keywords, output_option, preset_name):
+        """
+        Process a folder of EPUB, PDF, or text files, extract sentences with user-provided keywords,
+        highlight the keywords if requested, and save the results.
+        """
+        # Split ignored keywords and process the rest
+        ignored_keywords = [
+            keyword[1:] for profile_keywords in profiles.values() for keyword in profile_keywords if keyword.startswith('!')
+        ]
+        for profile_keywords in profiles.values():
+            profile_keywords[:] = [keyword for keyword in profile_keywords if not keyword.startswith('!')]
 
-    def process_highlight_keywords(self, text, keywords):
-        """Highlight all keywords based on their prefix while preserving the case in the original text."""
-        modified_text = text  # Start with the original text
-        for keyword in keywords:
-            # Determine highlight style and behavior based on prefix
+        # Remove duplicates across all profiles
+        seen_keywords = set()
+        for profile, keywords in profiles.items():
+            unique_keywords = []
+            for keyword in keywords:
+                if keyword not in seen_keywords:
+                    unique_keywords.append(keyword)
+                    seen_keywords.add(keyword)
+            profiles[profile] = unique_keywords
 
-            if keyword.startswith('@'):
-                base_keyword = keyword[1:]  # Remove '@' character
-                highlight_style = "[|{}|]"  # Special character highlight
-                extract = True  # Extract sentences containing this keyword
-            elif keyword.startswith('#'):
-                base_keyword = keyword[1:]  # Remove '#' character
-                highlight_style = "[|{}|]"  # Character color highlight
-                extract = False  # Do not extract sentences containing this keyword
+        # Remove duplicates from ignored keywords
+        ignored_keywords = list(set(ignored_keywords))
+
+        print("Keywords by profile (unique):", profiles)
+        print("Ignored keywords (unique):", ignored_keywords)
+        processed_keywords = list()  # Keep track of processed keyword forms
+
+        # Dictionary to store sentences
+        combined_sentences = {keyword: [] for keywords in profiles.values() for keyword in keywords}
+
+        # Iterate through all files in the folder
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+
+            if os.path.isfile(file_path) and file_name.endswith(('.epub', '.pdf', '.txt')):  # Supported file formats
+                # Extract sentences with keywords for each profile
+                for profile_number, keywords in profiles.items():
+                    if keywords:  # Only process non-empty keyword lists
+
+                        self.extract_sentences_with_keywords(file_path, keywords, combined_sentences, processed_keywords)
+
+        # Filter sentences to exclude those with ignored keywords
+        filtered_sentences = {
+            keyword: [
+                sentence for sentence in sentences
+                if not self.contains_ignored_keyword(sentence, ignored_keywords)
+            ]
+            for keyword, sentences in combined_sentences.items()
+        }
+
+        processed_keywords = list()  # Keep track of processed keyword forms
+
+        # Highlight keywords if requested
+        if highlight_keywords:
+            filtered_sentences = self.process_highlight_keywords(filtered_sentences, profiles, processed_keywords)
+
+        # Save results based on the output option
+        output_file_path = os.path.join(self.text_presets_dir, f"{preset_name}.txt")
+        with open(output_file_path, 'w', encoding='utf-8') as output_file:  # Ensure UTF-8 encoding
+            for sentences in filtered_sentences.values():
+                output_file.write('\n\n'.join(sentences) + '\n\n')
+        print(f"All sentences saved to {output_file_path}.")
+
+        if output_option == "All output":
+            # Save sentences into individual files for each keyword
+            for keyword, sentences in filtered_sentences.items():
+                if sentences:
+                    output_file_path = os.path.join(self.text_presets_dir, f"{preset_name}_{keyword}.txt")
+                    with open(output_file_path, 'w', encoding='utf-8') as output_file:  # Ensure UTF-8 encoding
+                        output_file.write('\n\n'.join(sentences) + '\n\n')
+            print(f"Sentences saved to individual files for each keyword.")
+
+
+
+    def get_keyword_forms(self, keyword):
+        if keyword.startswith('&') or keyword.startswith('@'):
+            keyword = keyword[1:]  # Remove the '&' or '@' character
+            return [keyword]
+        else:
+            return [self.get_singular_form(keyword), self.get_plural_form(keyword)]
+
+
+
+    def contains_ignored_keyword(self, sentence, ignored_keywords):
+        for ignored_keyword in ignored_keywords:
+            # Handle cases with both forms ignored or only plural ignored
+            if ignored_keyword.startswith('!&'):
+                # Ignore only the plural form
+                base_ignored_keyword = ignored_keyword.lstrip('!&')
+                forms_to_ignore = [base_ignored_keyword]  # Only plural form
             else:
-                base_keyword = keyword  # Use the keyword as is
-                highlight_style = "{{{}}}"  # Regular highlight
-                extract = True  # Default to extracting sentences
+                # Ignore both singular and plural forms
+                base_ignored_keyword = ignored_keyword.lstrip('!')
+                forms_to_ignore = self.get_keyword_forms(base_ignored_keyword)  # Both forms
 
-            # Get the singular and plural forms for highlighting
-            if keyword.startswith('@') or keyword.startswith('#'):
-                keyword_forms = [base_keyword]  # Only the base keyword for '@' and '#'
-            else:
-                keyword_forms = self.get_keyword_forms(base_keyword)  # Get forms for other keywords
+            # Check if any form is present in the sentence
+            for form in forms_to_ignore:
+                if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
+                    return True
+        return False         
 
-            # Highlight the keyword(s) in the text, preserving the original case
-            for form in keyword_forms:
-                # Use regex to find and highlight the keyword, preserving original capitalization
-                pattern = re.compile(r'(?<!\w)({})\b'.format(re.escape(form)), re.IGNORECASE)
 
-                # Lambda function to replace the matched word with highlighted style, preserving case
-                def replace_func(match):
-                    original_word = match.group(1)  # Get the exact match from the text
-                    return highlight_style.format(original_word)  # Apply the original match with highlighting
 
-                modified_text = pattern.sub(replace_func, modified_text)
 
-        return modified_text
+    def process_highlight_keywords(self, filtered_sentences, profiles, processed_keywords):
+        """
+        Highlight keywords and their forms in sentences with the appropriate number of brackets based on the profile name.
+        """
+        for profile_name, keywords in profiles.items():
+            # Extract the numeric part from the profile name (e.g., 'Keywords_1' -> 1)
+            match = re.search(r'(\d+)', profile_name)
+            bracket_count = int(match.group(1)) if match else 1  # Default to 1 if no number is found
+
+            # Construct the bracket style for this profile
+            left_bracket = "{" * bracket_count
+            right_bracket = "}" * bracket_count
+
+            # Process each keyword in the profile
+            for keyword in keywords:
+                if keyword.startswith('&') or keyword.startswith('#'):
+                    # Handle '&' or '#' prefixed keywords
+                    base_keyword = keyword[1:]
+                    keyword_forms = [base_keyword]
+                else:
+                    base_keyword = keyword
+                    keyword_forms = self.get_keyword_forms(base_keyword)  # Get all keyword forms
+            
+                forms_lower = [form.lower() for form in keyword_forms]
+                if any(form in processed_keywords for form in forms_lower):
+                    print(5555555555555)
+                    continue
+                else:
+
+
+                    # Compile a regex pattern to match the keyword forms
+                    pattern = re.compile(
+                        r'(?<!\w)({})\b'.format("|".join(map(re.escape, keyword_forms))), re.IGNORECASE
+                    )
+
+                    # Highlight keywords in all sentences
+                    for key, sentences in filtered_sentences.items():
+                        for i, sentence in enumerate(sentences):
+                            def replace_func(match):
+                                # Wrap the matched word in the appropriate brackets
+                                original_word = match.group(0)
+                                return f"{left_bracket}{original_word}{right_bracket}"
+
+                            # Update the sentence with highlighted keywords
+                            filtered_sentences[key][i] = pattern.sub(replace_func, sentence)
+
+                    for form in keyword_forms:
+                        print(41414141411414)
+                        # After processing all sentences for the current keyword, mark all its forms as processed
+                        processed_keywords.append(form.lower())
+
+
+
+        return filtered_sentences
+
+
 
 
     def replace_broken_characters(self, text):
@@ -690,17 +844,14 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             return keyword
 
-    def get_keyword_forms(self, keyword):
-        if keyword.startswith('&') or keyword.startswith('@'):
-            keyword = keyword[1:]  # Remove the '&' character
-            return [keyword]
-        else:
-            return [self.get_singular_form(keyword), self.get_plural_form(keyword)]
 
-    def extract_sentences_with_keywords(self, file_path, keywords, combined_sentences):
+
+
+    def extract_sentences_with_keywords(self, file_path, keywords, combined_sentences, processed_keywords):
         """
         Extract sentences containing the provided keywords from the file.
-        Ensure each sentence is added only once, even if it contains multiple keywords.
+        Ensure each sentence is added once per keyword, even if it contains multiple forms of the same keyword.
+        Skip keywords if they or their forms have been processed.
         """
         def match_keywords(forms, sentence):
             """Check if any form of the keyword is found in the sentence."""
@@ -741,23 +892,50 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         full_text = re.sub(r'\n(?=\S)', ' ', full_text)  # Handle newlines within paragraphs
         sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', full_text)  # Split by sentence endings
 
-        # Maintain a set of unique sentences
+        # Maintain a set of unique sentences and processed keywords
         unique_sentences = set()
 
-        # Iterate through each sentence and keyword
-        for sentence in sentences:
-            sentence_cleaned = self.replace_broken_characters(sentence.strip())  # Clean broken characters
-            for keyword in keywords:
-                # Get keyword forms (singular and plural)
-                forms = self.get_keyword_forms(keyword)
-                if match_keywords(forms, sentence_cleaned):
-                    # Add the sentence to the unique set and break to avoid duplicate addition
-                    if sentence_cleaned not in unique_sentences:
-                        combined_sentences[keyword].append(sentence_cleaned)
-                        unique_sentences.add(sentence_cleaned)
-                    break  # Exit the keyword loop once the sentence is added
+        # Iterate through each keyword
+        for keyword in keywords:
+            # Get all forms of the current keyword (singular, plural, etc.)
+            forms = self.get_keyword_forms(keyword)
+
+            forms_lower = [form.lower() for form in forms]
+
+            print('CURRENT KEYWORD', keyword)
+            # Skip if the keyword or its forms have been processed
+
+            if any(form in processed_keywords for form in forms_lower):
+                continue
+            else:
+
+                # Store all sentences under the original keyword once they're matched
+                keyword_sentences = []
+
+                # Iterate through each sentence
+                for sentence in sentences:
+                    sentence_cleaned = self.replace_broken_characters(sentence.strip())  # Clean broken characters
+
+                    # If the sentence contains a keyword form, process it
+                    if match_keywords(forms, sentence_cleaned):
+                        # Add the sentence to the list for this keyword
+                        if sentence_cleaned not in unique_sentences:
+                            unique_sentences.add(sentence_cleaned)
+                            keyword_sentences.append(sentence_cleaned)
+
+                # Store all sentences for this keyword under its original key
+                if keyword_sentences:
+                    if keyword not in combined_sentences:
+                        combined_sentences[keyword] = []  # Ensure the keyword key exists
+                    combined_sentences[keyword].extend(keyword_sentences)
+
+                for form in forms:
+                    # After processing all sentences for the current keyword, mark all its forms as processed
+                    processed_keywords.append(form.lower())
+
 
         print(f"Extracted {len(unique_sentences)} unique sentences.")
+
 
     def truncate_sentence(self, sentence, max_length=200):
             """Truncate the sentence at the last full word before exceeding the max length."""
@@ -806,83 +984,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         return truncated_sentence
                             
-
-
-    def process_epub_folder(self, folder_path, keywords, highlight_keywords, output_option, preset_name):
-        """Process a folder of EPUB, PDF, or text files, extract sentences with user-provided keywords,
-        highlight the keywords if requested, and save the results."""
-
-        # Separate ignored keywords and process the rest
-        ignored_keywords = [keyword for keyword in keywords if keyword.startswith('!')]
-        keywords = [keyword for keyword in keywords if not keyword.startswith('!')]
-
-        # Remove duplicates by converting the list of keywords to a set and back to a list
-        keywords = list(set(keywords))
-        print("Unique keywords:", keywords)
-
-        # Dictionary to store sentences (using keywords with prefixes during search)
-        combined_sentences = {keyword: [] for keyword in keywords}
-
-        # Iterate through all files in the folder
-        for file_name in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, file_name)
-
-            if os.path.isfile(file_path) and file_name.endswith(('.epub', '.pdf', '.txt')):  # Supported file formats
-                # Extract sentences with keywords
-                self.extract_sentences_with_keywords(file_path, keywords, combined_sentences)
-
-        # Create new dictionary with filtered sentences (removing ignored keywords)
-        filtered_sentences = {
-            keyword.lstrip("&@#"): [
-                sentence for sentence in sentences
-                if not self.contains_ignored_keyword(sentence, ignored_keywords)
-            ]
-            for keyword, sentences in combined_sentences.items()
-        }
-
-        # Highlight keywords if requested after filtering ignored keywords
-        if highlight_keywords:
-            for keyword, sentences in filtered_sentences.items():
-                for i in range(len(sentences)):
-                    # Apply highlighting based on keyword prefix
-                    sentences[i] = self.process_highlight_keywords(sentences[i], keywords)
-
-        # Save results based on the output option
-        output_file_path = os.path.join(self.text_presets_dir, f"{preset_name}.txt")
-        with open(output_file_path, 'w', encoding='utf-8') as output_file:  # Ensure UTF-8 encoding
-            for sentences in filtered_sentences.values():
-                output_file.write('\n\n'.join(sentences) + '\n\n')
-        print(f"All sentences saved to {output_file_path}.")
-
-        if output_option == "All output":
-            # Save sentences into individual files for each keyword
-            for keyword, sentences in filtered_sentences.items():
-                if sentences:
-                    output_file_path = os.path.join(self.text_presets_dir, f"{preset_name}_{keyword}.txt")
-                    with open(output_file_path, 'w', encoding='utf-8') as output_file:  # Ensure UTF-8 encoding
-                        output_file.write('\n\n'.join(sentences) + '\n\n')
-            print(f"Sentences saved to individual files for each keyword.")
-
-
-
-    def contains_ignored_keyword(self, sentence, ignored_keywords):
-        for ignored_keyword in ignored_keywords:
-            # Handle cases with both forms ignored or only plural ignored
-            if ignored_keyword.startswith('!&'):
-                # Ignore only the plural form
-                base_ignored_keyword = ignored_keyword.lstrip('!&')
-                forms_to_ignore = [base_ignored_keyword]  # Only plural form
-            else:
-                # Ignore both singular and plural forms
-                base_ignored_keyword = ignored_keyword.lstrip('!')
-                forms_to_ignore = self.get_keyword_forms(base_ignored_keyword)  # Both forms
-
-            # Check if any form is present in the sentence
-            for form in forms_to_ignore:
-                if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
-                    return True
-        return False         
-
 ########################################## TEXT PARSING END ##########################################
 ########################################## TEXT PARSING END ##########################################
 ########################################## TEXT PARSING END ##########################################
@@ -1397,7 +1498,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             schedule=self.session_schedule,
             items=selected_sentences,  
             total=self.total_scheduled_sentences,
-            clipboard_settings=self.clipboard_settings
+            clipboard_settings=self.clipboard_settings,
+            themes_dir=self.theme_presets_dir,
+            current_theme=self.current_theme
         )
         self.init_styles(session=self.display)
 
@@ -1603,7 +1706,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 class SessionDisplay(QWidget, Ui_session_display):
     closed = QtCore.pyqtSignal() # Needed here for close event to work.
 
-    def __init__(self, file_path = None, shortcuts = None, schedule=None, items=None, total=None, clipboard_settings=None):
+    def __init__(self, file_path = None, shortcuts = None, schedule=None, items=None, total=None, clipboard_settings=None, themes_dir=None,current_theme=None ):
+
         super().__init__()
         self.setupUi(self)
 
@@ -1614,6 +1718,8 @@ class SessionDisplay(QWidget, Ui_session_display):
         # Install event filter on the QLineEdit
         self.lineEdit.installEventFilter(self)
 
+        self.default_themes_dir = themes_dir
+        self.current_theme=current_theme
 
         # Initialize text settings dictionary with default values
         self.text_display_settings = {
@@ -1628,10 +1734,10 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         }
 
-        #Default highlights values
-        self.highlight_names_settings = "color: rgb(237,183,76);font-weight: bold;"
-        self.highlight_keywords_settings = "color: rgb(219,208,119);font-weight: bold;"
-        self.always_on_top_borde_settings = "rgb(255, 0, 0)"
+
+        # Init color settings
+        self.color_settings = {}
+
 
         self.text_display.setWordWrap(True)  # Enable word wrapping for the QLabel
         self.lineEdit.setMaxLength(self.text_display_settings["max_length_lineedit"])
@@ -1739,56 +1845,95 @@ class SessionDisplay(QWidget, Ui_session_display):
             super(SessionDisplay, self).keyPressEvent(event)  # Call base class method
 
 
+
+    def highlight_keywords(self, sentence, display=True):
+        """
+        Highlights keywords with different font colors and weight:
+        - Keywords between { and } are colored with different highlight colors depending on the number of curly braces.
+        - The entire sentence is colored with self.text_color.
+
+        :param sentence: The sentence to process.
+        :param display: If True, highlights keywords; if False, returns the sentence without highlights.
+        """
+        if not display:
+            # Remove highlight curly braces and return plain text
+            sentence = re.sub(r'\{+(\w+?)\}+', r'\1', sentence)  # Remove {...}, {{...}}, etc.
+            return sentence
+
+        # Apply overall text color to the sentence
+        sentence = rf'<span style="color:{self.color_settings["text_color"]};">{sentence}</span>'
+
+        # Replace curly brackets with corresponding highlight color
+        def replace_with_color(match):
+            """Determine the color based on the number of curly braces and return the highlighted span."""
+            # Count the number of opening braces
+            curly_count = match.group(0).count('{')
+
+            # Find the corresponding highlight color
+            color_key = f"highlight_color_{curly_count}"
+            color_style = self.color_settings.get(color_key, self.color_settings["highlight_color_1"])
+
+            # Return the highlighted keyword wrapped in the appropriate color style
+            return rf'<span style="color:{color_style}">{match.group(1)}</span>'
+
+        # Use regex to find keywords with different levels of curly brackets and replace them
+        sentence = re.sub(r'\{+(\w+?)\}+', replace_with_color, sentence)
+
+        return sentence
+
+
+
     def copy_sentence(self, rich_text=True):
         """Copy the current sentence to the clipboard, with or without rich text."""
         # Retrieve the current sentence
         current_sentence = self.playlist[self.playlist_position].strip()
 
-        if rich_text:
-            # Extract color styles from the settings (Ensure proper extraction of RGB values)
-            keyword_color = re.search(r"color:\s*rgb\((.*?)\)", self.highlight_keywords_settings)
-            name_color = re.search(r"color:\s*rgb\((.*?)\)", self.highlight_names_settings)
-            
-            # Fallback colors if extraction fails
-            keyword_color = [int(c) for c in keyword_color.group(1).split(",")] if keyword_color else [255, 165, 0]  # Default: orange
-            name_color = [int(c) for c in name_color.group(1).split(",")] if name_color else [0, 0, 255]  # Default: blue
+        # Function to replace curly braces with appropriate highlighted spans
+        def replace_with_color(match):
+            """Determine the color based on the number of curly braces and return the highlighted span."""
+            # Count the number of opening braces
+            curly_count = match.group(0).count('{')
 
-            # Prepare HTML-style formatting for rich text using inline CSS for color
-            highlighted_sentence = re.sub(
-                r'\{\s*(.*?)\s*\}', 
-                fr'<span style="color:rgb({keyword_color[0]},{keyword_color[1]},{keyword_color[2]})">\1</span>',
-                current_sentence
-            )
-            highlighted_sentence = re.sub(
-                r'\[\|\s*(.*?)\s*\|\]', 
-                fr'<span style="color:rgb({name_color[0]},{name_color[1]},{name_color[2]})">\1</span>',
-                highlighted_sentence
-            )
+            # Find the corresponding highlight color
+            color_key = f"highlight_color_{curly_count}"
+            color_style = self.color_settings.get(color_key, self.color_settings["highlight_color_1"])
+
+            # Return the highlighted keyword wrapped in the appropriate color style
+            return rf'<span style="color:{color_style}">{match.group(1)}</span>'
+
+        # Handle the rich text part
+        if rich_text:
+            # Apply overall text color to the sentence first
+            text_color = self.color_settings.get('text_color', 'rgb(0, 255, 255)')  # Default cyan if not set
+
+            # Replace curly braces with appropriate highlight color
+            highlighted_sentence = re.sub(r'\{+(\w+?)\}+', replace_with_color, current_sentence)
+
+            # Wrap the entire sentence in a span with the overall text color
+            highlighted_sentence = rf'<span style="color:{text_color}">{highlighted_sentence}</span>'
 
             # Create a mime data object with both plain text and HTML content
             clipboard = QApplication.clipboard()
             mime_data = QtCore.QMimeData()
 
-            # Set the HTML content using inline CSS for the highlighting
-            mime_data.setData('text/html', f"<p>{highlighted_sentence}</p>".encode('utf-8'))
+
+            mime_data.setData('text/html', highlighted_sentence.encode('utf-8'))
 
             # Set the plain text content (without any brackets or highlights)
-            plain_text = re.sub(r'\{\s*(.*?)\s*\}|\[\|\s*(.*?)\s*\|\]', r'\1\2', current_sentence)
+            plain_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)  # Remove curly brackets for plain text
             mime_data.setText(plain_text)
 
             # Set the mime data to the clipboard
             clipboard.setMimeData(mime_data)
-            print(f"Copied Rich Text (HTML): <p>{highlighted_sentence}</p>")
-
+            print(f"Copied Rich Text (HTML): {highlighted_sentence}")
         else:
             # For plain text, remove brackets and highlights
-            clipboard_text = re.sub(r'\{\s*(.*?)\s*\}|\[\|\s*(.*?)\s*\|\]', r'\1\2', current_sentence)
+            clipboard_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
 
             # Copy to clipboard as plain text (with no brackets or highlights)
             clipboard = QApplication.clipboard()
             clipboard.setText(clipboard_text)
             print(f"Copied Plain Text: {clipboard_text}")
-
 
 
 
@@ -1984,9 +2129,13 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.show_main_window_button.clicked.connect(self.show_main_window)
         self.show_main_window_button.setToolTip(f"[{self.shortcuts['session_window']['show_main_window']}] Open settings window")
 
-        
-        
 
+        # Open color picker
+        self.color_text_button.clicked.connect(self.open_color_picker)
+        self.color_text_button.setToolTip(f"[{self.shortcuts['session_window']['color_window']}] Open color window")
+
+        
+        
         
 
 
@@ -1999,6 +2148,10 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         self.toggle_text_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["toggle_text_field"]), self)
         self.toggle_text_key.activated.connect(self.toggle_text_field)
+
+
+        self.color_text_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["color_window"]), self)
+        self.color_text_key.activated.connect(self.open_color_picker)
 
 
         self.always_on_top_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["always_on_top"]), self)
@@ -2106,13 +2259,14 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         # Apply font to QLabel
         self.text_display.setFont(font)
-
+         #self.text_display.setStyleSheet(f"color: {self.color_settings['text_color']};")
         # Get RGB values for font color and background color
-        color = self.text_display_settings.get("font_color", "black")
+        #color = self.text_display_settings.get("font_color", "black")
 
 
 
     def display_sentence(self, update_status=True):
+
         if not hasattr(self, 'session_info') or sip.isdeleted(self.session_info):
             return
 
@@ -2140,36 +2294,6 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.update_session_info()
 
 
-    def highlight_keywords(self, sentence, display=True):
-        """
-        Highlights keywords with different font colors and weight:
-        - Keywords between [| and |] are colored with self.highlight_names_color and bold weight.
-        - Keywords between { and } are colored with self.highlight_keywords_color and bold weight.
-        
-        :param sentence: The sentence to process.
-        :param display: If True, highlights keywords; if False, returns the sentence without highlights.
-        """
-        if not display:
-            # Remove highlight brackets and return plain text
-            sentence = re.sub(r'\[\|(.*?)\|\]', r'\1', sentence)  # Remove [|...|]
-            sentence = re.sub(r'\{(.*?)\}', r'\1', sentence)       # Remove {...}
-            return sentence
-
-        # Replace [|...|] with self.highlight_names_color and bold weight
-        sentence = re.sub(
-            r'\[\|(.*?)\|\]', 
-            rf'<span style="{self.highlight_names_settings}; ">\1</span>', 
-            sentence
-        )
-
-        # Replace {...} with self.highlight_keywords_color and bold weight
-        sentence = re.sub(
-            r'\{(.*?)\}', 
-            rf'<span style="{self.highlight_keywords_settings}">\1</span>', 
-            sentence
-        )
-
-        return sentence
 
         
 
@@ -2181,26 +2305,25 @@ class SessionDisplay(QWidget, Ui_session_display):
         if self.border_overlay.isVisible():
             self.apply_border(True)
 
-
     def apply_border(self, show_border=True, border_width=1):
-        border_color=self.always_on_top_borde_settings
+        border_color = self.color_settings['always_on_top_border']  # Always present
+
+        print('Border color:', border_color)
 
         if show_border:
             self.border_overlay.show()
-            self.border_overlay.raise_()  # Make sure it's above all other widgets
+            self.border_overlay.raise_()  # Ensure it's above all other widgets
 
             # Create a pixmap for the border overlay that matches the window size
             border_pixmap = QtGui.QPixmap(self.size())
             border_pixmap.fill(QtCore.Qt.transparent)  # Transparent background
 
-            # Parse the RGB color string into a QColor object
-            if isinstance(border_color, str) and border_color.startswith("rgb"):
-                # Extract the RGB values from the string
-                rgb_values = [int(x) for x in border_color.replace("rgb(", "").replace(")", "").split(",")]
-                q_color = QtGui.QColor(*rgb_values)
-            else:
-                # If it's already a QColor, use it directly
-                q_color = QtGui.QColor(border_color)
+            # Clean the RGB string by removing unwanted characters like semicolons
+            border_color_clean = border_color.replace("rgb(", "").replace(")", "").replace(";", "")
+            
+            # Parse the cleaned RGB values into a QColor object
+            rgb_values = [int(x) for x in border_color_clean.split(",")]
+            q_color = QtGui.QColor(*rgb_values)
 
             # Create a QPainter to draw the border
             painter = QtGui.QPainter(border_pixmap)
@@ -2241,6 +2364,20 @@ class SessionDisplay(QWidget, Ui_session_display):
 
             print("Highlight keyword: Off")
         self.display_sentence()
+
+    def open_color_picker(self):
+        theme_file_path = os.path.join(self.default_themes_dir, self.current_theme)
+        dialog_color = ColorPickerDialog(self, theme_file_path=theme_file_path, color_settings=self.color_settings)
+        view.init_styles(dialog_color=dialog_color)
+
+        if dialog_color.exec_():
+            # After saving colors, update the color settings in the parent class (now all handled by color_settings)
+            self.color_settings = dialog_color.parent().color_settings  # Directly update color_settings
+            # Reapply the updated styles to the displayed sentence
+            self.display_sentence()
+
+
+
 
 
 
@@ -2642,55 +2779,201 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.time_seconds = int(self.schedule[self.entry['current']][2])
         self.update_timer_display()
 
-class GridSettingsDialog(QDialog):
-    def __init__(self, parent=None,default_vertical = 4, default_horizontal = 4):
+
+
+class ColorPickerDialog(QDialog):
+    def __init__(self, parent, theme_file_path, color_settings):
         super().__init__(parent)
-        self.setWindowTitle("Grid Settings")
+        self.setWindowTitle("Select Colors")
+        self.theme_file_path = theme_file_path
+        self.color_settings = color_settings  # Use color_settings instead of self.colors
 
-        # Remove the question mark from the title bar
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
+        # Remove the question mark by adjusting window flags
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        # Layout for the dialog
-        layout = QVBoxLayout()
+        # Set the window size and make it impossible to resize
+        self.setFixedSize(300, 350)  # Set a fixed width and height for the dialog
 
-        # Input fields for vertical and horizontal lines
-        self.vertical_input = QSpinBox()
-        self.vertical_input.setMinimum(1)
-        self.vertical_input.setMaximum(20)
-        self.vertical_input.setValue(default_vertical)  # Default value
+        # Layout for dialog
+        self.layout = QVBoxLayout()
 
-        self.horizontal_input = QSpinBox()
-        self.horizontal_input.setMinimum(1)
-        self.horizontal_input.setMaximum(20)
-        self.horizontal_input.setValue(default_horizontal)  # Default value
+        # Create a color section for the text color
+        self.create_text_color_section()
 
-        # Labels
-        layout.addWidget(QLabel("Vertical:"))
-        layout.addWidget(self.vertical_input)
-        layout.addWidget(QLabel("Horizontal:"))
-        layout.addWidget(self.horizontal_input)
+        # Create highlight color section
+        self.create_highlight_color_section()
 
-        # Create OK and Cancel buttons
-        ok_button = QPushButton("OK")
-        cancel_button = QPushButton("Cancel")
+        # Save button
+        self.save_button = QPushButton("Save Colors")
+        self.save_button.clicked.connect(self.save_colors)
+        self.layout.addWidget(self.save_button)
+
+        self.setLayout(self.layout)
+
+        self.load_colors()
 
 
-        # Connect buttons
-        ok_button.clicked.connect(self.accept)
-        cancel_button.clicked.connect(self.reject)
+    def create_text_color_section(self):
+        """Create an improved text color selection section."""
+        section_layout = QVBoxLayout()
+        section_layout.setSpacing(10)  # Increased spacing for clarity
 
-        # Add buttons to a horizontal layout
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(ok_button)
-        button_layout.addWidget(cancel_button)
+        # Text color label with improved styling
+        text_label = QLabel("Text color :")
+        text_label.setAlignment(Qt.AlignCenter)
+        text_label.setStyleSheet("padding: 5px;")
 
-        # Add button layout to the main layout
-        layout.addLayout(button_layout)
+        # Text color button with enhanced appearance
+        text_color_button = QPushButton()
+        text_color_button.setFixedSize(35, 35)  # Slightly larger button for better usability
+        text_color_button.setStyleSheet("background-color: lightgray;")
+        text_color_button.clicked.connect(lambda: self.pick_color("text_color", text_color_button))
 
-        self.setLayout(layout)
-    def get_values(self):
-        return self.vertical_input.value(), self.horizontal_input.value()
+        # Add widgets to layout
+        section_layout.addWidget(text_label)
+        section_layout.addWidget(text_color_button, alignment=Qt.AlignCenter)
 
+        # Add to main layout
+        self.layout.addLayout(section_layout)
+
+    def get_text_color_based_on_background(self, background_color):
+        """Determine whether the text color should be black or white based on the background color's brightness."""
+        # Extract RGB values from the background color (assumes the format is 'rgb(r, g, b)')
+        rgb_values = [int(x) for x in background_color[4:-1].split(',')]
+        r, g, b = rgb_values
+
+        # Calculate luminance using the formula
+        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+        # If luminance is greater than a certain threshold, use black text, else use white text
+        return "black" if luminance > 128 else "white"
+
+    def create_highlight_color_section(self):
+        """Create the highlight color section with buttons displayed in a grid."""
+        section_layout = QVBoxLayout()
+
+        # Highlight color label (centered)
+        highlight_label = QLabel("Highlight Colors:")
+        highlight_label.setAlignment(Qt.AlignCenter)
+        highlight_label.setStyleSheet("padding: 5px;")
+
+        # Create a grid layout for highlight color buttons
+        grid_layout = QGridLayout()
+        grid_layout.setVerticalSpacing(10)  # Increased vertical space for clarity
+
+        # Create and add buttons to the grid layout
+        for i in range(1, 10):
+            highlight_key = f"highlight_color_{i}"
+            color_button = QPushButton(str(i))  # Label with number (1, 2, ..., 9)
+            color_button.setFixedSize(35, 35)  # Set size of buttons
+            color_button.setObjectName(f"highlight_button_{i}")  # Set a unique object name
+
+            # Get the button's background color
+            background_color = self.color_settings[highlight_key]
+
+            # Get the text color based on the background color's brightness
+            text_color = self.get_text_color_based_on_background(background_color)
+
+            # Set the button's style with dynamic text color
+            color_button.setStyleSheet(f"background-color: {background_color}; border: none; color: {text_color};")
+            color_button.clicked.connect(lambda _, k=highlight_key, btn=color_button: self.pick_color(k, btn))
+            grid_layout.addWidget(color_button, (i-1)//3, (i-1)%3)  # Arrange in 3x3 grid
+
+        # Create a group box for the grid layout to group the buttons
+        group_box = QGroupBox()
+        group_box.setLayout(grid_layout)
+        group_box.setStyleSheet("border: none; background: transparent; padding: 10px;")  # Remove border and background
+
+        # Add label and grid layout to the section layout
+        section_layout.addWidget(highlight_label)
+        section_layout.addWidget(group_box)
+
+        # Add section layout to main layout
+        self.layout.addLayout(section_layout)
+
+
+
+
+    def pick_color(self, key, button):
+        """Open color dialog to pick color for selected key and update the button background."""
+        # Parse the current color string into a QColor object
+        color_str = self.color_settings[key]
+        color_parts = [int(val) for val in color_str.replace("rgb(", "").replace(")", "").split(",")]
+        current_color = QColor(color_parts[0], color_parts[1], color_parts[2])
+
+        # Open color dialog to pick color and set the current color as the initial selection
+        new_color = QColorDialog.getColor(current_color, self, f"Pick a Color for {key}")
+
+        if new_color.isValid():
+            # Update color in RGB format (not hex)
+            self.color_settings[key] = f"rgb({new_color.red()}, {new_color.green()}, {new_color.blue()})"
+
+            # Get the appropriate text color based on luminance
+            text_color = self.get_text_color_based_on_background(self.color_settings[key])
+
+            # Update the background color of the clicked button
+            button.setStyleSheet(f"background-color: {self.color_settings[key]}; color: {text_color};")
+
+
+
+
+    def save_colors(self):
+        """Save the selected colors into the theme file."""
+        try:
+            with open(self.theme_file_path, "r") as file:
+                theme_data = json.load(file)
+
+            # Save colors in RGB format
+            theme_data["text_display"].update({
+                "text_color": f"{self.color_settings['text_color']}",
+            })
+
+            # Save highlight colors
+            for i in range(1, 10):
+                highlight_key = f"highlight_color_{i}"
+                theme_data["text_display"][highlight_key] = f"{self.color_settings[highlight_key]}"
+
+            # Save updated theme data to the file
+            with open(self.theme_file_path, "w") as file:
+                json.dump(theme_data, file, indent=4)
+
+            # After saving, update the color settings in the parent class
+            self.parent().color_settings = self.color_settings  # Update the parent color settings
+
+            self.accept()  # Close dialog after saving
+        except Exception as e:
+            print(f"Error saving colors: {e}")
+
+    def load_colors(self):
+        """Load colors from the theme file."""
+        try:
+            with open(self.theme_file_path, "r") as file:
+                theme_data = json.load(file)
+
+            # Load text color
+            self.color_settings["text_color"] = theme_data["text_display"].get("text_color", self.color_settings["text_color"]).split(":")[-1].strip()
+
+            # Find and update the text color button
+            text_color_button = self.findChild(QPushButton)
+            if text_color_button:
+                background_color = self.color_settings["text_color"]
+                text_color = self.get_text_color_based_on_background(background_color)
+                text_color_button.setStyleSheet(f"background-color: {background_color}; border: none; color: {text_color};")
+
+            # Load highlight colors and update buttons
+            for i in range(1, 10):
+                highlight_key = f"highlight_color_{i}"
+                self.color_settings[highlight_key] = theme_data["text_display"].get(highlight_key, self.color_settings[highlight_key]).split(":")[-1].strip()
+
+                # Find the button for the highlight color and update its color
+                color_button = self.findChild(QPushButton, f"highlight_button_{i}")
+                if color_button:
+                    background_color = self.color_settings[highlight_key]
+                    text_color = self.get_text_color_based_on_background(background_color)
+                    color_button.setStyleSheet(f"background-color: {background_color}; border: none; color: {text_color};")
+
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading theme: {e}")
 
 class MaxLengthDelegate(QStyledItemDelegate):
     def __init__(self, max_length=60, parent=None):
@@ -2706,20 +2989,21 @@ class MaxLengthDelegate(QStyledItemDelegate):
 
             # Subclass to enable multifolder selection.
 
-
 class MultiFolderSelector(QtWidgets.QDialog):
     def __init__(self, parent=None, preset_name="preset_1", stylesheet=""):
         super(MultiFolderSelector, self).__init__(parent)
         self.setWindowTitle("Select Folders")
-
         self.setMinimumWidth(400)
         self.setMinimumHeight(500)  # Adjusted height to accommodate the new input fields
-
-        # Remove the question mark button by setting the window flags
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
         # Initialize selected folders list
         self.selected_folders = []
+
+        # Initialize keyword profiles as empty lists instead of strings
+        self.keyword_profiles = {f"Keywords_{i}": [] for i in range(1, 10)}
+        self.current_profile = "Keywords_1"
+
         # Layout
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -2733,6 +3017,12 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.preset_name_edit.setText(preset_name)
         layout.addWidget(self.preset_name_edit)
 
+        # Dropdown to select keyword profile
+        self.profile_dropdown = QtWidgets.QComboBox(self)
+        self.profile_dropdown.addItems(self.keyword_profiles.keys())
+        self.profile_dropdown.currentTextChanged.connect(self.load_profile_keywords)
+        layout.addWidget(self.profile_dropdown)
+
         # Scrollable text input for keywords
         self.keyword_input = QtWidgets.QTextEdit(self)
         self.keyword_input.setPlaceholderText(
@@ -2743,13 +3033,11 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "\"!&Keyword\" : ignore sentences with the given form\n\n"
             "\"#Name\" : highlight name\n"
             "\"@Name\" : search and highlight name\n\n"
-
-            "\";Comment\" : ignore line "
+            "\";Comment\" : ignore line"
         )
-        self.keyword_input.setMinimumHeight(100)  # Set a minimum height for the text input
+        self.keyword_input.setMinimumHeight(100)
+        self.keyword_input.textChanged.connect(self.save_current_profile_keywords)
         layout.addWidget(self.keyword_input)
-
-        self.keyword_input.setPlainText("")
 
         # Checkbox for "Highlight Keywords"
         self.highlight_keywords_checkbox = QtWidgets.QCheckBox("Highlight Keywords", self)
@@ -2797,76 +3085,55 @@ class MultiFolderSelector(QtWidgets.QDialog):
 
         # Ensure Enter triggers OK button
         self.ok_button.setFocusPolicy(QtCore.Qt.StrongFocus)
+
         self.init_message_boxes()
+        self.keyword_input.setFocus()
 
     def get_highlight_keywords_option(self):
-        """Returns whether the 'Highlight Keywords' checkbox is checked."""
         return self.highlight_keywords_checkbox.isChecked()
 
     def get_output_option(self):
-        """Returns the selected output option from the dropdown menu."""
         return self.output_option_dropdown.currentText()
 
     def get_selected_folders(self):
-        """Return the selected folders."""
         return self.selected_folders
 
-    def get_keyword_input(self):
-        """Return the keywords entered by the user as a list, separated by line breaks."""
-        keywords = self.keyword_input.toPlainText().splitlines()
-        return [kw.strip() for kw in keywords if kw.strip()]  # Return only non-empty lines
-
     def get_preset_name(self):
-        """Return the preset name entered by the user."""
         return self.preset_name_edit.text()
 
-        
+    def get_all_keyword_profiles(self):
+        return self.keyword_profiles
+
     def init_message_boxes(self):
-        """Initialize custom message box settings."""
         self.message_box = QtWidgets.QMessageBox(self)
-        self.message_box.setIcon(QtWidgets.QMessageBox.NoIcon)  # Set to no icon by default
-    
+        self.message_box.setIcon(QtWidgets.QMessageBox.NoIcon)
+
     def show_info_message(self, title, message):
-        """Show an information message box without an icon."""
         self.message_box.setWindowTitle(title)
         self.message_box.setText(message)
         self.message_box.exec_()
 
-
     def format_folder_path(self, folder_path):
-        """Format the folder path to display only the end part."""
-        # Normalize the path to use backslashes
         normalized_path = folder_path.replace('/', os.sep).replace('\\', os.sep)
-
-        # Split the normalized path into parts
         parts = normalized_path.split(os.sep)
-
-        # Debug print
-        print("Normalized Path:", normalized_path)
-        print("Path Parts:", parts)
-
-        # If there are more than 2 parts, keep the last two parts
         if len(parts) > 3:
-            return '...\\' + os.sep.join(parts[-3:])  # Show the last two parts of the path
-        return normalized_path  # If less than or equal, return as is
+            return '...\\' + os.sep.join(parts[-3:])
+        return normalized_path
 
-
-        
     def multi_select_folders(self):
         file_dialog = QtWidgets.QFileDialog(self)
         file_dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
         file_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
         file_dialog.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
-        file_view = file_dialog.findChild(QListView, 'listView')
+        file_view = file_dialog.findChild(QtWidgets.QListView, 'listView')
         if file_view:
-            file_view.setSelectionMode(QAbstractItemView.MultiSelection)
+            file_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
 
-        f_tree_view = file_dialog.findChild(QTreeView)
+        f_tree_view = file_dialog.findChild(QtWidgets.QTreeView)
         if f_tree_view:
-            f_tree_view.setSelectionMode(QAbstractItemView.MultiSelection)
+            f_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
 
-        # Variable to store the last navigated directory
         last_directory = None
 
         def update_last_directory(directory):
@@ -2877,13 +3144,7 @@ class MultiFolderSelector(QtWidgets.QDialog):
 
         if file_dialog.exec():
             folders = file_dialog.selectedFiles()
-
-            # Filter out the parent directory if included mistakenly
-            filtered_folders = [
-                folder for folder in folders if folder != last_directory
-            ]
-
-            # Add the filtered folders to the selected list
+            filtered_folders = [folder for folder in folders if folder != last_directory]
             for folder in filtered_folders:
                 if folder and folder not in self.selected_folders:
                     self.selected_folders.append(folder)
@@ -2894,51 +3155,44 @@ class MultiFolderSelector(QtWidgets.QDialog):
         selected_items = self.list_widget.selectedItems()
         if selected_items:
             for item in selected_items:
-                # Find the full path corresponding to the formatted path in the list
                 formatted_path = item.text()
                 full_path = None
-
-                # Iterate through the selected_folders to find the matching full path
                 for folder in self.selected_folders:
                     if self.format_folder_path(folder) == formatted_path:
                         full_path = folder
                         break
-
-                # If full path is found, remove it
                 if full_path:
                     self.selected_folders.remove(full_path)
-
-                # Remove the item from the list widget
                 self.list_widget.takeItem(self.list_widget.row(item))
 
-    def get_selected_folders(self):
-        return self.selected_folders
+    def load_profile_keywords(self, profile_name):
+        """Load keywords for the selected profile into the text input as a list."""
+        self.save_current_profile_keywords()
+        self.current_profile = profile_name
+        keywords = self.keyword_profiles[profile_name]
+        self.keyword_input.setPlainText("\n".join(keywords))
 
-    def get_preset_name(self):
-        return self.preset_name_edit.text()
+        # Set focus to the keyword input field
+        self.keyword_input.setFocus()
 
-    def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Return or event.key() == QtCore.Qt.Key_Enter:
-            # Trigger OK button click
-            self.ok_button.click()
-        else:
-            super(MultiFolderSelector, self).keyPressEvent(event)
+    def save_current_profile_keywords(self):
+        """Save the current keywords into the active profile as a list."""
+        text = self.keyword_input.toPlainText()
+        keywords = [keyword.strip() for keyword in text.splitlines() if keyword.strip()]  # Convert input text to list of keywords
+        self.keyword_profiles[self.current_profile] = keywords
 
     def accept(self):
         """Accept the dialog and check for existing presets before processing."""
         preset_name = self.get_preset_name().strip()
-
-        # Check if the preset name already exists
         text_presets_dir = self.parent().text_presets_dir  # Assume parent has this attribute
         preset_filename = f'{preset_name}.txt'
         preset_filepath = os.path.join(text_presets_dir, preset_filename)
 
         if os.path.exists(preset_filepath):
-            self.show_info_message( 'Duplicate Preset', f'The preset "{preset_name}" already exists. Please choose a different name.')
+            self.show_info_message('Duplicate Preset', f'The preset "{preset_name}" already exists. Please choose a different name.')
             return  # Do not accept the dialog
 
         super(MultiFolderSelector, self).accept()
-
 
 class ThemeSelectorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, theme_presets_dir="", session_settings_file=""):
