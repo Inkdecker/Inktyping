@@ -2,7 +2,7 @@
   <img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample.png" alt="Project Screenshot" width="600"/>
 </p>
 
-# Session_writing
+# <img src="https://raw.githubusercontent.com/Inkdecker/session_writing/refs/heads/main/ui/resources/icons/session_writing.png" width="25" style="vertical-align: middle;" /> Session Writing
 
 This is a free text mining tool users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
 
@@ -38,16 +38,10 @@ Prefix | Result
 **&Keyword** | search the given form [Keyword]
 **!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
-<<<<<<< Updated upstream
 **#Name** | highlight name
 **@Name** | search and highlight name
 **;Comment** | ignore line 
 
-=======
-**#Name** | highlight names
-**@Name** | search and highlight names
-**;Comments** | ignore line 
->>>>>>> Stashed changes
 
 3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
 
@@ -86,7 +80,7 @@ Zoom - | D, Numpad -, Mousewheel
 Toggle highlight | G
 Toggle text field | T
 Toggle Always On Top | A
-Previous sentence | Left Arrow Key
+Previous sentence | Left Arrow Key, Shift + Backspace
 Stop | Esc 
 Pause | Spacebar
 Next sentence | Right Arrow Key, Return
