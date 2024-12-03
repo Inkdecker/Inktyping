@@ -2,7 +2,7 @@
   <img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample.png" alt="Project Screenshot" width="600"/>
 </p>
 
-# Session_writing
+# <img src="https://raw.githubusercontent.com/Inkdecker/session_writing/refs/heads/main/ui/resources/icons/session_writing.png" width="25" style="vertical-align: middle;" /> Session Writing
 
 This is a free text mining tool users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
 
