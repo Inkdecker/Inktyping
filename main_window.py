@@ -214,6 +214,7 @@ class Ui_MainWindow(object):
         font.setWeight(50)
         font.setStrikeOut(False)
         self.table_sentences_selection.setFont(font)
+        self.table_sentences_selection.setFocusPolicy(QtCore.Qt.NoFocus)
         self.table_sentences_selection.setToolTip("")
         self.table_sentences_selection.setAutoFillBackground(False)
         self.table_sentences_selection.setStyleSheet("QHeaderView::section {background: rgb(220,220,220); color: \'black\'};")
@@ -485,6 +486,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.addLayout(self.gridLayout)
         self.table_session_selection = QtWidgets.QTableWidget(self.centralwidget)
         self.table_session_selection.setMinimumSize(QtCore.QSize(540, 228))
+        self.table_session_selection.setFocusPolicy(QtCore.Qt.NoFocus)
         self.table_session_selection.setStyleSheet("QHeaderView::section {background: rgb(220,220,220); color: \'black\'};background: rgb(80,80,80)")
         self.table_session_selection.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.table_session_selection.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -594,7 +596,7 @@ class Ui_MainWindow(object):
         self.close_window_button.setText(_translate("MainWindow", "Close"))
         self.auto_start_toggle.setToolTip(_translate("MainWindow", "<p style=\"color:black\">Automatically start session on next launch if selected instead of opening the menu window.</p>"))
         self.auto_start_toggle.setText(_translate("MainWindow", "Start session"))
-        self.randomize_toggle.setToolTip(_translate("MainWindow", "<p style=\"color:black\">Display the images randomly if selected.</p>"))
+        self.randomize_toggle.setToolTip(_translate("MainWindow", "<p style=\"color:black\">Display the sentences randomly if selected.</p>"))
         self.randomize_toggle.setText(_translate("MainWindow", "Randomize"))
 import resources_config_rc
 
