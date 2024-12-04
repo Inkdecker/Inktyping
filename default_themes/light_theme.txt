@@ -28,7 +28,7 @@
         "QPushButton": "background: rgb(180, 180, 180); color: black;"
     },
     "common_spinbox_styles": {
-        "QSpinBox": "background: rgb(230, 230, 230); color: black;selection-background-color: rgb(100, 100, 100);"
+        "QSpinBox": "background: rgb(220, 220, 220); color: rgb(40, 40, 40);;border: 1px solid rgb(200, 200, 200);selection-background-color: rgb(100, 100, 100);"
     },
     "common_checkbox_styles": {
         "QCheckBox": "color: black;"
@@ -36,14 +36,33 @@
     "dialog_styles": {
         "QDialog": "background: rgb(240, 240, 240); color: black;",
         "QPushButton": "background: rgb(180, 180, 180); color: black;",
-        "QListView, QTreeView": "background: rgb(230, 230, 230); color: black;",
+
+
+        "QListView, QTreeView": "background: rgb(230, 230, 230); color: black;border:none;",
+
+
+        "QListView::item:hover, QTreeView::item:hover": "background: rgb(180, 180, 180); color: rgb(40, 40, 40);",
+        "QListView::item:selected, QTreeView::item:selected": "background: rgb(180, 180, 180); color: rgb(40, 40, 40);border: 1px solid transparent;outline: none;",
+
+
+        "QCheckBox": "color: rgb(0, 0, 0);",
+        "QComboBox": "background: rgb(240, 240, 240); color: rgb(20, 20, 20); border: 1px solid rgb(160, 160, 160);",
+        "QComboBox QAbstractItemView": "background: rgb(220, 220, 220); color: rgb(40, 40, 40);",
+        "QComboBox QAbstractItemView::item": "background: rgb(220, 220, 220);background-color: rgb(180, 180, 180); color: rgb(40, 40, 40);",
+        "QComboBox QAbstractItemView::item:hover": "background-color: rgb(60, 60, 60);background: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+        "QComboBox QAbstractItemView::item:selected": "background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+        "QListView QTreeView::item:selected:active": "background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+
+
+
+
+
         "QLineEdit": "background: rgb(230, 230, 230); color: black;selection-background-color: rgb(100, 100, 100);",
         "QLineEdit:focus": "background: rgb(220, 220, 220); color: rgb(20, 20, 20); border: 1px solid rgb(160, 160, 160);selection-background-color: rgb(100, 100, 100);",
         "QLabel": "color: rgb(40, 40, 40);",
         "QTextEdit": "background: rgb(240, 240, 240); color: rgb(0, 0, 0); border: 1px solid rgb(230, 230, 230);selection-background-color: rgb(100, 100, 100);",
         "QTextEdit:focus": "background: rgb(240, 240, 240); color: rgb(0, 0, 0); border: 1px solid rgb(160, 160, 160);selection-background-color: rgb(100, 100, 100);",
-        "QCheckBox": "color: rgb(0, 0, 0);",
-        "QComboBox": "background: rgb(240, 240, 240); color: rgb(20, 20, 20); border: 1px solid rgb(160, 160, 160);",
+
         "QTableWidget": "background: rgb(240, 240, 240); color: black;",
         "QTableWidget::item:selected": "background-color: rgb(200, 200, 200); color: black;",
         "QTableWidget::item:selected:focus": "background-color: rgb(200, 200, 200); color: black;",
@@ -56,7 +75,7 @@
         "QLabel": "color: rgb(40, 40, 40)"
     },
     "session_display, image_display": {
-        "QWidget": "background: rgb(170, 170, 170);",
+        "QWidget": "background: rgb(180, 180, 180);",
         "window_icon": "ui/resources/icons/session_writing_light.png",
         "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png"
     },
@@ -81,7 +100,7 @@
         "QWidget": "color: rgb(20, 20, 20);background: rgb(200, 200, 200);padding: 0 30px; border: 2px solid rgb(110, 110, 110);selection-background-color: rgb(100, 100, 100);"
     },
     "session_buttons": {
-        "QPushButton": "background: rgb(150, 150, 150); color: black;"
+        "QPushButton": "background: rgb(200, 200, 200); color: black;"
     },
     "session_display_labels": {
         "QLabel": "color: black; font-family: Garamond; font-size: 12pt; font-weight: bold; font-style: normal;"

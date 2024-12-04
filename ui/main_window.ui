@@ -515,6 +515,9 @@
             <height>20</height>
            </size>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="styleSheet">
            <string notr="true">background: rgb(220,220,220); color: 'black';</string>
           </property>
@@ -697,6 +700,9 @@
               <kerning>false</kerning>
              </font>
             </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
             <property name="toolTip">
              <string>Remove preset from table and delete its file.</string>
             </property>
@@ -748,6 +754,9 @@
                 <width>77</width>
                 <height>20</height>
                </size>
+              </property>
+              <property name="focusPolicy">
+               <enum>Qt::NoFocus</enum>
               </property>
               <property name="styleSheet">
                <string notr="true">background: rgb(220,220,220); color: 'black';</string>
@@ -958,6 +967,9 @@
               <weight>50</weight>
               <bold>false</bold>
              </font>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
             </property>
             <property name="toolTip">
              <string>Add image files from folder(s).</string>
@@ -1205,7 +1217,7 @@
          </font>
         </property>
         <property name="focusPolicy">
-         <enum>Qt::StrongFocus</enum>
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
          <string>Save preset and add it to the table.</string>
@@ -1247,6 +1259,9 @@
           <weight>50</weight>
           <bold>false</bold>
          </font>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
          <string>Remove preset from table and delete its file.</string>
@@ -1359,6 +1374,9 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string/>
           </property>
@@ -1410,6 +1428,9 @@
               <width>80</width>
               <height>16777215</height>
              </size>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
             </property>
             <property name="toolTip">
              <string/>
