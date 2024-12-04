@@ -132,7 +132,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
         self.init_styles()
-        self.init_message_boxes()
+        
 
         self.presets = {}  # This should be defined or loaded as needed
 
@@ -385,7 +385,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                                     style_sheet += f"{selector} {{{style}}}\n"
 
                             self.setStyleSheet(style_sheet)
-
+                            self.init_message_boxes()
                         elif dialog and element_name == "dialog_styles":
                             # Apply styles to the dialog if it matches the name in the theme file
                             style_sheet = ""
@@ -2040,8 +2040,8 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
     def show_main_window(self):
-        view.show()
-        view.init_styles()              # Show the main window
+        view.show()  # Show the main window
+        view.init_styles()  # Initialize window style           
         view.raise_()            # Bring the window to the front
         view.activateWindow()    # Focus on the window
 
@@ -2997,7 +2997,7 @@ class MaxLengthDelegate(QStyledItemDelegate):
             # Subclass to enable multifolder selection.
 
 class MultiFolderSelector(QtWidgets.QDialog):
-    def __init__(self, parent=None, preset_name="preset_1", stylesheet=""):
+    def __init__(self, parent=None, preset_name="preset_1"):
         super(MultiFolderSelector, self).__init__(parent)
         self.setWindowTitle("Select Folders")
         self.setMinimumWidth(400)
@@ -3083,9 +3083,6 @@ class MultiFolderSelector(QtWidgets.QDialog):
 
         layout.addLayout(button_layout)
 
-        # Apply passed stylesheet
-        self.setStyleSheet(stylesheet)
-
         # Set the default focus to the list widget
         self.list_widget.setFocus()
 
@@ -3115,8 +3112,10 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.message_box.setIcon(QtWidgets.QMessageBox.NoIcon)
 
     def show_info_message(self, title, message):
+
         self.message_box.setWindowTitle(title)
         self.message_box.setText(message)
+
         self.message_box.exec_()
 
     def format_folder_path(self, folder_path):

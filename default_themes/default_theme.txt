@@ -27,7 +27,7 @@
         "QPushButton": "background: rgb(153, 102, 51); color: rgb(220, 220, 220);"
     },
     "common_spinbox_styles": {
-        "QSpinBox": "background: rgb(50, 50, 50); color: rgb(220, 220, 220);selection-background-color: rgb(153, 102, 51);"
+        "QSpinBox": "background: rgb(60, 60, 60); color: rgb(220, 220, 220);;border: 1px solid rgb(50, 50, 50);selection-background-color: rgb(153, 102, 51);"
     },
     "common_checkbox_styles": {
         "QCheckBox": "color: rgb(255, 255, 255);"
@@ -35,14 +35,32 @@
     "dialog_styles": {
         "QDialog": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);",
         "QPushButton": "background: rgb(153, 102, 51); color: rgb(220, 220, 220);",
-        "QListView, QTreeView": "background: rgb(40, 40, 40); color: rgb(220, 220, 220);",
+
+        "QListView, QTreeView": "background: rgb(40, 40, 40); color: rgb(220, 220, 220);border:none;",
+        "QListView::item:hover, QTreeView::item:hover": "background: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+        "QListView::item:selected, QTreeView::item:selected": "background: rgb(60, 60, 60); color: rgb(220, 220, 220);border: 1px solid transparent;outline: none;",
+
+
+        "QCheckBox": "background-color: rgb(40, 40, 40);color: rgb(255, 255, 255);",
+        "QComboBox": "background-color: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(153, 102, 51);",
+
+        "QComboBox QAbstractItemView": ";background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+        "QComboBox QAbstractItemView::item": ";background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+        "QComboBox QAbstractItemView::item:hover": "background-color: rgb(60, 60, 60);color: rgb(220, 220, 220);",
+        "QComboBox QAbstractItemView::item:selected": "background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+        "QListView QTreeView::item:selected:active": "background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
+
+
+
+
+
+
+
         "QLineEdit": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(153, 102, 51);selection-background-color: rgb(153, 102, 51);",
         "QLineEdit:focus": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(153, 102, 51);selection-background-color: rgb(153, 102, 51);",
         "QLabel": "color: rgb(255, 255, 255);",
         "QTextEdit": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid transparent;selection-background-color: rgb(153, 102, 51);",
         "QTextEdit:focus": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(80, 80, 80);selection-background-color: rgb(153, 102, 51);",
-        "QCheckBox": "color: rgb(255, 255, 255);",
-        "QComboBox": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(153, 102, 51);",
         
         "QTableWidget": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);",
         "QTableWidget::item:selected": "background-color: rgb(100, 100, 100); color: rgb(255, 255, 255);",
