@@ -39,8 +39,7 @@ Prefix | Result
 **&Keyword** | search the given form [Keyword]
 **!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
-**#Name** | highlight name
-**@Name** | search and highlight name
+**#Name** | highlight the given form without searching it
 **;Comment** | ignore line 
 
 
