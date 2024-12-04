@@ -12,10 +12,11 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Sentence extraction using multiple keywords
 	- Handling of both singular and plural forms
 	- Ability to select keywords to ignore
-	- 2 types of highlighting for both Names and Keywords
-    - Ability to customize themes, highlight colors and shortcuts
+	- Up to 9 different color profiles for the highliting of the keywords
+   	- Ability to customize themes, highlight colors and shortcuts
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
+	
 
 ##### Supported files :  .txt, .epub, .pdf
 
@@ -79,6 +80,7 @@ Zoom + | Q, Numpad +, Mousewheel
 Zoom - | D, Numpad -, Mousewheel
 Toggle highlight | G
 Toggle text field | T
+Open color window | F1
 Toggle Always On Top | A
 Previous sentence | Left Arrow Key, Shift + Backspace
 Stop | Esc 
