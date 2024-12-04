@@ -567,6 +567,9 @@
             <strikeout>false</strikeout>
            </font>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="toolTip">
            <string/>
           </property>
@@ -1266,6 +1269,9 @@
         <height>228</height>
        </size>
       </property>
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
       <property name="styleSheet">
        <string notr="true">QHeaderView::section {background: rgb(220,220,220); color: 'black'};background: rgb(80,80,80)</string>
       </property>
@@ -1449,7 +1455,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>&lt;p style=&quot;color:black&quot;&gt;Display the images randomly if selected.&lt;/p&gt;</string>
+           <string>&lt;p style=&quot;color:black&quot;&gt;Display the sentences randomly if selected.&lt;/p&gt;</string>
           </property>
           <property name="text">
            <string>Randomize</string>

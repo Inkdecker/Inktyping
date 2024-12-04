@@ -405,6 +405,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                             # Apply style to session_display if it matches the name in the theme file
                             style_sheet = ""
                             for selector, style in element_styles.items():
+                                if selector == "window_icon":
+                                    if self.temp_dir : 
+                                        file_path = os.path.join(self.temp_dir, style)
+                                    else: 
+                                        file_path = os.path.join(self.base_dir, style)
+                                    session.setWindowIcon(QtGui.QIcon(file_path))
+
                                 style_sheet += f"{style}\n"
                             session.setStyleSheet(style_sheet)
 
@@ -714,8 +721,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def get_keyword_forms(self, keyword):
-        if keyword.startswith('&') or keyword.startswith('@'):
-            keyword = keyword[1:]  # Remove the '&' or '@' character
+        if keyword.startswith('&'):
+            keyword = keyword[1:]  # Remove the '&' prefix
             return [keyword]
         else:
             return [self.get_singular_form(keyword), self.get_plural_form(keyword)]
@@ -790,7 +797,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                             filtered_sentences[key][i] = pattern.sub(replace_func, sentence)
 
                     for form in keyword_forms:
-                        print(41414141411414)
                         # After processing all sentences for the current keyword, mark all its forms as processed
                         processed_keywords.append(form.lower())
 
@@ -2034,7 +2040,8 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
     def show_main_window(self):
-        view.show()              # Show the main window
+        view.show()
+        view.init_styles()              # Show the main window
         view.raise_()            # Bring the window to the front
         view.activateWindow()    # Focus on the window
 
@@ -2902,7 +2909,7 @@ class ColorPickerDialog(QDialog):
         current_color = QColor(color_parts[0], color_parts[1], color_parts[2])
 
         # Open color dialog to pick color and set the current color as the initial selection
-        new_color = QColorDialog.getColor(current_color, self, f"Pick a Color for {key}")
+        new_color = QColorDialog.getColor(current_color, self, f"Pick a color for highlight {key[-1]}")
 
         if new_color.isValid():
             # Update color in RGB format (not hex)
@@ -3001,8 +3008,8 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.selected_folders = []
 
         # Initialize keyword profiles as empty lists instead of strings
-        self.keyword_profiles = {f"Keywords_{i}": [] for i in range(1, 10)}
-        self.current_profile = "Keywords_1"
+        self.keyword_profiles = {f"Highlight color {i}": [] for i in range(1, 10)}
+        self.current_profile = "Highlight color 1"
 
         # Layout
         layout = QtWidgets.QVBoxLayout(self)
@@ -3031,8 +3038,7 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "\"&Keyword\" : search the given form\n\n"
             "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
             "\"!&Keyword\" : ignore sentences with the given form\n\n"
-            "\"#Name\" : highlight name\n"
-            "\"@Name\" : search and highlight name\n\n"
+            "\"#Keyword\" : highlight the given form without searching it\n"
             "\";Comment\" : ignore line"
         )
         self.keyword_input.setMinimumHeight(100)
@@ -3133,6 +3139,18 @@ class MultiFolderSelector(QtWidgets.QDialog):
         f_tree_view = file_dialog.findChild(QtWidgets.QTreeView)
         if f_tree_view:
             f_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+
+            # Customize the columns
+            header = f_tree_view.header()
+            header.setStretchLastSection(True)  # Enable stretching for the last column
+            header.setSectionsMovable(True)    # Allow columns to be reordered
+            header.setSectionsClickable(True)  # Allow column header interaction
+            header.setSectionResizeMode(QtWidgets.QHeaderView.Interactive)  # Enable resizing for all columns
+
+            # Set column visibility for desired columns: Name, Size, Type, Date Modified
+            for col_index in range(header.count()):
+                if col_index not in [0, 1, 2, 3]:  # Adjust these indices to match your desired columns
+                    header.hideSection(col_index)
 
         last_directory = None
 

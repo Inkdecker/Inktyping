@@ -1,8 +1,8 @@
 {
-    "selected_sentence_row": 3,
+    "selected_sentence_row": 4,
     "selected_session_row": 0,
     "randomize_settings": false,
-    "auto_start_settings": true,
+    "auto_start_settings": false,
     "clipboard_settings": false,
     "theme_settings": "default_theme.txt",
     "shortcuts": {
