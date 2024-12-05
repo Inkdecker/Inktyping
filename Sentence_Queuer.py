@@ -68,6 +68,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 "pause_timer": "Space",
                 "close": "Escape",
                 "next_sentence": "Right",
+                "open_folder": "O",
                 "copy_plain_text": "C",
                 "copy_highlighted_text": "Ctrl+C",
                 "toggle_clipboard": "Shift+C",
@@ -671,21 +672,29 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         print("Keywords by profile (unique):", profiles)
         print("Ignored keywords (unique):", ignored_keywords)
-        processed_keywords = list()  # Keep track of processed keyword forms
 
-        # Dictionary to store sentences
+        # Gather all files in the specified folder only (not subfolders)
+        file_paths = [
+            os.path.join(folder_path, file) for file in os.listdir(folder_path)
+            if os.path.isfile(os.path.join(folder_path, file)) and file.endswith(('.epub', '.pdf', '.txt'))  # Supported formats
+        ]
+
+        if not file_paths:
+            print(f"No supported files found in folder: {folder_path}")
+            return
+
+        print(f"Found {len(file_paths)} files to process.")
+
+        # Initialize storage for combined sentences and processed keywords
         combined_sentences = {keyword: [] for keywords in profiles.values() for keyword in keywords}
+        processed_keywords = []
 
-        # Iterate through all files in the folder
-        for file_name in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, file_name)
-
-            if os.path.isfile(file_path) and file_name.endswith(('.epub', '.pdf', '.txt')):  # Supported file formats
-                # Extract sentences with keywords for each profile
-                for profile_number, keywords in profiles.items():
-                    if keywords:  # Only process non-empty keyword lists
-
-                        self.extract_sentences_with_keywords(file_path, keywords, combined_sentences, processed_keywords)
+        # Iterate through profiles and call extract_sentences_with_keywords
+        for profile_number, keywords in profiles.items():
+            if keywords:  # Only process non-empty keyword lists
+                self.extract_sentences_with_keywords(
+                    file_paths, keywords, combined_sentences, processed_keywords
+                )
 
         # Filter sentences to exclude those with ignored keywords
         filtered_sentences = {
@@ -696,10 +705,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             for keyword, sentences in combined_sentences.items()
         }
 
-        processed_keywords = list()  # Keep track of processed keyword forms
-
+        processed_keywords = []
+        
         # Highlight keywords if requested
         if highlight_keywords:
+            print('33333 PROCESSED KEYWORDS :', processed_keywords)
+            print('33333 filtered_sentences :', filtered_sentences)
+            print('33333 profiles :', profiles)
             filtered_sentences = self.process_highlight_keywords(filtered_sentences, profiles, processed_keywords)
 
         # Save results based on the output option
@@ -716,7 +728,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     output_file_path = os.path.join(self.text_presets_dir, f"{preset_name}_{keyword}.txt")
                     with open(output_file_path, 'w', encoding='utf-8') as output_file:  # Ensure UTF-8 encoding
                         output_file.write('\n\n'.join(sentences) + '\n\n')
-            print(f"Sentences saved to individual files for each keyword.")
+            print("Sentences saved to individual files for each keyword.")
+
 
 
 
@@ -775,7 +788,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             
                 forms_lower = [form.lower() for form in keyword_forms]
                 if any(form in processed_keywords for form in forms_lower):
-                    print(5555555555555)
                     continue
                 else:
 
@@ -852,12 +864,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-
-    def extract_sentences_with_keywords(self, file_path, keywords, combined_sentences, processed_keywords):
+    def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords):
         """
-        Extract sentences containing the provided keywords from the file.
+        Extract sentences containing the provided keywords from the list of files.
         Ensure each sentence is added once per keyword, even if it contains multiple forms of the same keyword.
-        Skip keywords if they or their forms have been processed.
+        Skip keywords if they or their forms have already been processed after all files are processed.
         """
         def match_keywords(forms, sentence):
             """Check if any form of the keyword is found in the sentence."""
@@ -865,6 +876,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
                     return True
             return False
+
 
         # Load text from the file
         def extract_text_from_epub(file_path):
@@ -875,30 +887,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 soup = BeautifulSoup(content, 'html.parser')
                 full_text += soup.get_text(separator=' ')
             return full_text
-
-        # Load text depending on the file type
-        if file_path.endswith('.pdf'):
-            with open(file_path, 'rb') as file:
-                reader = PyPDF2.PdfReader(file)
-                full_text = "".join([page.extract_text() or "" for page in reader.pages])
-        elif file_path.endswith('.txt'):
-            try:
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    full_text = file.read()
-            except UnicodeDecodeError:
-                with open(file_path, 'r', encoding='iso-8859-1') as file:
-                    full_text = file.read()
-        elif file_path.endswith('.epub'):
-            full_text = extract_text_from_epub(file_path)
-        else:
-            print("Unsupported file type. Please select a PDF, text, or EPUB file.")
-            return
-
-        # Clean and split the text into sentences
-        full_text = re.sub(r'\n(?=\S)', ' ', full_text)  # Handle newlines within paragraphs
-        sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', full_text)  # Split by sentence endings
-
-        # Maintain a set of unique sentences and processed keywords
+        # Maintain a set of unique sentences
         unique_sentences = set()
 
         # Iterate through each keyword
@@ -906,41 +895,61 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             # Get all forms of the current keyword (singular, plural, etc.)
             forms = self.get_keyword_forms(keyword)
 
+            # Skip if the keyword or its forms have already been processed
             forms_lower = [form.lower() for form in forms]
-
-            print('CURRENT KEYWORD', keyword)
-            # Skip if the keyword or its forms have been processed
-
             if any(form in processed_keywords for form in forms_lower):
                 continue
-            else:
 
-                # Store all sentences under the original keyword once they're matched
-                keyword_sentences = []
+            # Temporary list to collect sentences for the current keyword across all files
+            keyword_sentences = []
+
+            # Process each file for the current keyword
+            for file_path in file_paths:
+                # Load text from the file
+                if file_path.endswith('.pdf'):
+                    with open(file_path, 'rb') as file:
+                        reader = PyPDF2.PdfReader(file)
+                        full_text = "".join([page.extract_text() or "" for page in reader.pages])
+                elif file_path.endswith('.txt'):
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as file:
+                            full_text = file.read()
+                    except UnicodeDecodeError:
+                        with open(file_path, 'r', encoding='iso-8859-1') as file:
+                            full_text = file.read()
+                elif file_path.endswith('.epub'):
+                    full_text = extract_text_from_epub(file_path)
+                else:
+                    print(f"Unsupported file type: {file_path}")
+                    continue
+
+                # Clean and split the text into sentences
+                full_text = re.sub(r'\n(?=\S)', ' ', full_text)  # Handle newlines within paragraphs
+                sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', full_text)  # Split by sentence endings
 
                 # Iterate through each sentence
                 for sentence in sentences:
                     sentence_cleaned = self.replace_broken_characters(sentence.strip())  # Clean broken characters
 
-                    # If the sentence contains a keyword form, process it
+                    # If the sentence contains a keyword form, add it
                     if match_keywords(forms, sentence_cleaned):
-                        # Add the sentence to the list for this keyword
                         if sentence_cleaned not in unique_sentences:
                             unique_sentences.add(sentence_cleaned)
                             keyword_sentences.append(sentence_cleaned)
 
-                # Store all sentences for this keyword under its original key
-                if keyword_sentences:
-                    if keyword not in combined_sentences:
-                        combined_sentences[keyword] = []  # Ensure the keyword key exists
-                    combined_sentences[keyword].extend(keyword_sentences)
+            # Store all sentences for this keyword under its original key
+            if keyword_sentences:
+                if keyword not in combined_sentences:
+                    combined_sentences[keyword] = []  # Ensure the keyword key exists
+                combined_sentences[keyword].extend(keyword_sentences)
 
-                for form in forms:
-                    # After processing all sentences for the current keyword, mark all its forms as processed
-                    processed_keywords.append(form.lower())
+            # After processing all files for the current keyword, mark all its forms as processed
+            for form in forms:
+                processed_keywords.append(form.lower())
 
-
+        print(f"Processed keywords: {processed_keywords}")
         print(f"Extracted {len(unique_sentences)} unique sentences.")
+
 
 
     def truncate_sentence(self, sentence, max_length=200):
@@ -3028,6 +3037,8 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.profile_dropdown = QtWidgets.QComboBox(self)
         self.profile_dropdown.addItems(self.keyword_profiles.keys())
         self.profile_dropdown.currentTextChanged.connect(self.load_profile_keywords)
+
+        
         layout.addWidget(self.profile_dropdown)
 
         # Scrollable text input for keywords

@@ -10,7 +10,7 @@
         "QTreeView": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);"
     },
     "table_sentences_selection, table_session_selection, table_images_selection": {
-        "QTableWidget": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);",
+        "QTableWidget": "background: rgb(30, 30, 30); color: rgb(220, 220, 220); border: 1px solid rgb(60, 60, 60);",
         "QTableWidget::item:selected": "background-color: rgb(153, 102, 51); color: rgb(255, 255, 255);",
         "QTableWidget::item:selected:focus": "background-color: rgb(153, 102, 51); color: rgb(255, 255, 255);",
         "QHeaderView::section": "background-color: rgb(40, 40, 40); color: rgb(220, 220, 220); padding: 4px; border: none; font-weight: normal;",
@@ -45,10 +45,6 @@
         "QComboBox": "background-color: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(153, 102, 51);",
 
         "QComboBox QAbstractItemView": ";background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
-        "QComboBox QAbstractItemView::item": ";background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
-        "QComboBox QAbstractItemView::item:hover": "background-color: rgb(60, 60, 60);color: rgb(220, 220, 220);",
-        "QComboBox QAbstractItemView::item:selected": "background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
-        "QListView QTreeView::item:selected:active": "background-color: rgb(60, 60, 60); color: rgb(220, 220, 220);",
 
 
 
