@@ -10,7 +10,7 @@
         "QTreeView": "background: rgb(240, 240, 240); color: black;"
     },
     "table_sentences_selection, table_session_selection, table_images_selection ": {
-        "QTableWidget": "background: rgb(240, 240, 240); color: black;",
+        "QTableWidget": "background: rgb(240, 240, 240); color: black;border: 1px solid rgb(200, 200, 200);",
         "QTableWidget::item:selected": "background-color: rgb(200, 200, 200); color: black;",
         "QTableWidget::item:selected:focus": "background-color: rgb(200, 200, 200); color: black;",
         "QHeaderView::section": "background-color: rgb(220, 220, 220); color: black; padding: 4px; border: none; font-weight: normal;",
