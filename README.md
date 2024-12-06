@@ -111,7 +111,7 @@ Next Sentence | Right click
 Open Text File | Middle click
 Copy Text File Path | Scroll up
 Close slideshow | Scroll down
-Move image to \rainmeter_presets\Deleted Files | Mouse button 1
+Move image to "..\rainmeter_presets\Deleted Files" | Mouse button 1
 Open Sentence folder | Mouse button 2
 
 ## Licence
