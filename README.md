@@ -16,7 +16,8 @@ It can be used to either analyze text for research purposes or practice writing.
    	- Ability to customize themes, highlight colors and shortcuts
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
-	- Ability to create Rainmeter profiles to export the slideshows
+ 
+	- Latest: Ability to create Rainmeter profiles to export the slideshows
 	
 
 ##### Supported files :  .txt, .epub, .pdf
