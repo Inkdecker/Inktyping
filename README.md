@@ -16,6 +16,7 @@ It can be used to either analyze text for research purposes or practice writing.
    	- Ability to customize themes, highlight colors and shortcuts
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
+	- Ability to create Rainmeter profiles to export the slideshows
 	
 
 ##### Supported files :  .txt, .epub, .pdf
@@ -95,5 +96,15 @@ Add 30s | Up Arrow Key
 Add 1 Minute | Ctrl + Up Arrow Key
 Reset timer | Ctrl + Shift + Up Arrow Key
 
+### Rainmeter Slideshow: 
+Button | Hotkey
+------------ | -------------
+Previous Sentence | Left click
+Next Sentence | Right click
+Open Text File | Middle click
+Copy Text File Path | Scroll up
+Close slideshow | Scroll down
+Move image to \rainmeter_presets\Deleted Files | Mouse button 1
+Open Sentence folder | Mouse button 2
 ## Licence
 [GNU General Public License v3.0](https://github.com/Inkdecker/session_writing/blob/main/LICENSE)
