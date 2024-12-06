@@ -17,7 +17,7 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
  
-	- Latest: Ability to create Rainmeter profiles to export the slideshows
+	- New: Ability to create Rainmeter profiles to export the slideshows
 	
 
 ##### Supported files :  .txt, .epub, .pdf
