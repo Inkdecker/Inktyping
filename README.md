@@ -58,6 +58,12 @@ Prefix | Result
 > 
 > Note: You can select "Clipboard" to automatically copy the sentences to the clipboard.
 
+## Rainmeter
+The sentence preset can be exported and used as rainmeter slideshow. To do so, selected the sentence presets you to export and press the Rainmeter button. You can then place the created inside your **\RAINMETER\Skins** and then load it.
+> Note: The TEXT_SLIDESHOW.ini file can be edited to customise the slideshow.
+> 
+> Note: Deleted sentences get stored inside a new text file send to the \rainmeter_presets\Deleted Files folder. 
+
 
 ## Troubleshooting 
 - Delete the **session_settings.txt** to reset settings and shortcuts.
@@ -106,5 +112,6 @@ Copy Text File Path | Scroll up
 Close slideshow | Scroll down
 Move image to \rainmeter_presets\Deleted Files | Mouse button 1
 Open Sentence folder | Mouse button 2
+
 ## Licence
 [GNU General Public License v3.0](https://github.com/Inkdecker/session_writing/blob/main/LICENSE)
