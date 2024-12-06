@@ -49,7 +49,7 @@ Prefix | Result
 
 4 - Select **"Single output"** to store all the sentences into a single files, **"All output"** to produce additional files for each individual keywords.
 
-5 - Click "OK", the extracted sentences will be stored inside the **text_preset/** folder, the sentences separated by an empty line.
+5 - Click "OK", the extracted sentences will be stored inside the **"../text_preset/"** folder, the sentences separated by an empty line.
 
 6 - Create or select a preset with the settings that you want to use for the session.
 
@@ -60,10 +60,10 @@ Prefix | Result
 > Note: You can select "Clipboard" to automatically copy the sentences to the clipboard.
 
 ## Rainmeter
-The sentence preset can be exported and used as rainmeter slideshow. To do so, select the sentence preset you want to export and press the [Rainmeter] button. You can then place the created profile inside your **\RAINMETER\Skins** folder and then launch it using rainmeter.
-> Note: The TEXT_SLIDESHOW.ini file can be edited to customise the slideshow.
+The sentence preset can be exported and used as rainmeter slideshow. To do so, select the sentence preset you want to export and press the [Rainmeter] button. You can then place the created profile inside your **"..\RAINMETER\Skins"** folder and then launch it using rainmeter.
+> Note: The TEXT_SLIDESHOW.ini file can be edited to customise the slideshow. Most variables can be found in the [Variables] section.
 > 
-> Note: Deleted sentences get stored inside a new text file send to the \rainmeter_presets\Deleted Files folder. 
+> Note: Deleted sentences get stored inside a new text file send to the "..\rainmeter_presets\Deleted Files" folder. 
 
 
 ## Troubleshooting 
