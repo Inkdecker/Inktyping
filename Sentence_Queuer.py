@@ -103,6 +103,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.theme_presets_dir = os.path.join(self.presets_dir, 'theme_presets')  # New directory for themes
         self.default_themes_dir = os.path.join(self.base_dir,'default_themes')  # Default themes directory
 
+
+        self.rainmeter_presets_dir = os.path.join(self.presets_dir,'rainmeter_presets')  
+        self.rainmeter_files_dir = os.path.join(self.base_dir,'rainmeter_files')  
+        self.rainmeter_deleted_files_dir = os.path.join(self.rainmeter_presets_dir,'Deleted Files') 
+
+
         self.default_themes = ['default_theme.txt','dark_theme.txt', 'light_theme.txt']
         self.current_theme = "default_theme.txt"
 
@@ -111,6 +117,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         print(' Temporary Directory:', self.temp_dir)
         print(' Default Themes Directory:', self.default_themes_dir)
         print(' Theme Presets Directory:', self.theme_presets_dir)
+
+
+        print(' Rainmeter Presets Directory:', self.rainmeter_presets_dir)
+        print(' Rainmeter Files Directory:', self.rainmeter_files_dir)
+        print(' Rainmeter Deleted Files Directory:', self.rainmeter_deleted_files_dir)
+
         print('------------------')
 
 
@@ -130,6 +142,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.sentence_selection_cache = -1
         self.session_selection_cache = -1
+
+        # Init color settings
+        self.color_settings = {}
 
 
         self.init_styles()
@@ -305,6 +320,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.open_preset_button.clicked.connect(self.open_preset) 
 
+        # Buttons for rainmeter
+        self.rainmeter_preset_button.clicked.connect(self.create_rainmeter_preset) 
+
         # Start session button with tooltip
         self.start_session_button.clicked.connect(self.start_session_from_files)
         self.start_session_button.setToolTip(f"[{self.shortcut_settings['main_window']['start']}] Start the session.")
@@ -420,24 +438,38 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                                 print('No background color')
                                 session.setStyleSheet("background: rgb(0,0,0)")
 
-                        elif session and element_name == "text_display":
-                            # Apply style to text_display if it matches the name in the theme file
-                            style_sheet = ""
-                            
-                            for selector, style in element_styles.items():
-                                if selector == "text_color":
-                                    session.color_settings[selector]=style
-
-                                elif "highlight_color_" in selector:
-                                    session.color_settings[selector] = style
+                        elif  element_name == "text_display":
+                            if session:
 
 
-                                elif selector == "always_on_top_border":   
-                                    session.color_settings["always_on_top_border"]=style
-                                else:
-                                    style_sheet += f"{selector} {{{style}}}\n"
-                                if hasattr(session, 'text_display'):
-                                    session.text_display.setStyleSheet(style_sheet)
+                                # Apply style to text_display if it matches the name in the theme file
+                                style_sheet = ""
+                                
+                                for selector, style in element_styles.items():
+                                    if selector == "text_color":
+                                        session.color_settings[selector]=style
+
+                                    elif "highlight_color_" in selector:
+                                        session.color_settings[selector] = style
+
+
+                                    elif selector == "always_on_top_border":   
+                                        session.color_settings["always_on_top_border"]=style
+                                    else:
+                                        style_sheet += f"{selector} {{{style}}}\n"
+                                    if hasattr(session, 'text_display'):
+                                        session.text_display.setStyleSheet(style_sheet)
+                            else:
+
+                                # Apply style to text_display if it matches the name in the theme file
+                                style_sheet = ""
+                                
+                                for selector, style in element_styles.items():
+                                    if selector == "text_color":
+                                        self.color_settings[selector]=style
+
+                                    elif "highlight_color_" in selector:
+                                        self.color_settings[selector] = style
 
 
                         elif session and element_name == "lineEdit":
@@ -477,7 +509,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Apply common button styles to QPushButton widgets
                 if "common_button_styles" in styles_dict:
                     button_styles = styles_dict["common_button_styles"]
-                    for button_name in ["theme_options_button", "add_folders_button", "delete_sentences_preset", "open_preset_button",
+                    for button_name in ["theme_options_button", "add_folders_button", "delete_sentences_preset", "open_preset_button","rainmeter_preset_button",
                                         "delete_session_preset", "save_session_presets_button", "start_session_button", "close_window_button"]:
                         if hasattr(self, button_name):
                             button = getattr(self, button_name)
@@ -600,7 +632,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             output_option = dialog.get_output_option()  # Get output option
 
             preset_name = dialog.get_preset_name()  # Retrieve the preset name
-
+            max_length = dialog.get_max_length()
             if not selected_dirs:
                 self.show_info_message('No Selection', 'No folders were selected.')
                 return
@@ -612,7 +644,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             for directory in selected_dirs:
                 if os.path.isdir(directory):
                     # Process the folder with keyword profiles, highlight option, and output option
-                    self.process_epub_folder(directory, keyword_profiles, highlight_keywords, output_option, preset_name)
+                    self.process_epub_folder(directory, keyword_profiles, highlight_keywords, output_option, preset_name, max_length)
 
             self.show_info_message('Success', f'Processed all selected folders and saved to text_presets.')
 
@@ -645,7 +677,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 ########################################## TEXT PARSING ##########################################
 ########################################## TEXT PARSING ##########################################
 
-    def process_epub_folder(self, folder_path, profiles, highlight_keywords, output_option, preset_name):
+    def process_epub_folder(self, folder_path, profiles, highlight_keywords, output_option, preset_name, max_length):
         """
         Process a folder of EPUB, PDF, or text files, extract sentences with user-provided keywords,
         highlight the keywords if requested, and save the results.
@@ -693,7 +725,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         for profile_number, keywords in profiles.items():
             if keywords:  # Only process non-empty keyword lists
                 self.extract_sentences_with_keywords(
-                    file_paths, keywords, combined_sentences, processed_keywords
+                    file_paths, keywords, combined_sentences, processed_keywords, max_length
                 )
 
         # Filter sentences to exclude those with ignored keywords
@@ -706,12 +738,10 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         }
 
         processed_keywords = []
-        
+
         # Highlight keywords if requested
         if highlight_keywords:
-            print('33333 PROCESSED KEYWORDS :', processed_keywords)
-            print('33333 filtered_sentences :', filtered_sentences)
-            print('33333 profiles :', profiles)
+
             filtered_sentences = self.process_highlight_keywords(filtered_sentences, profiles, processed_keywords)
 
         # Save results based on the output option
@@ -864,18 +894,71 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords):
+    def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords, max_length):
         """
         Extract sentences containing the provided keywords from the list of files.
         Ensure each sentence is added once per keyword, even if it contains multiple forms of the same keyword.
         Skip keywords if they or their forms have already been processed after all files are processed.
         """
-        def match_keywords(forms, sentence):
+        def match_keywords(forms, sentence, max_length):
             """Check if any form of the keyword is found in the sentence."""
             for form in forms:
                 if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
-                    return True
+                    return truncate_sentence_around_keyword(sentence=sentence, keyword=form, max_length=max_length)
             return False
+
+
+        def truncate_sentence(sentence, max_length):
+            """Truncate the sentence to fit within max_length without cutting words."""
+            if len(sentence) <= max_length:
+                return sentence
+            words = sentence[:max_length].split()
+            truncated_sentence = ' '.join(words[:-1]) + '...' if len(words) > 1 else words[0] + '...'
+            return truncated_sentence
+
+        def truncate_sentence_around_keyword(sentence, keyword, max_length=200, buffer=50):
+            """
+            Truncate the sentence around the keyword, ensuring the keyword is visible.
+            max_length: Maximum length (in characters) of the truncated sentence.
+            buffer: How much text (in characters) to show before and after the keyword.
+            """
+            # Find where the keyword appears in the sentence (case-insensitive)
+            match = re.search(r'\b{}\b'.format(re.escape(keyword)), sentence, re.IGNORECASE)
+
+            if not match:
+                # If the keyword is not found, truncate the sentence without cutting words
+                return truncate_sentence(sentence, max_length)
+
+            start_index = match.start()
+            end_index = match.end()
+
+            # Calculate the total buffer space to ensure max_length is respected
+            total_buffer = max_length - (end_index - start_index)
+            half_buffer = total_buffer // 2
+
+            # Calculate where to start and end the truncation (ensure buffer is within bounds)
+            start = max(0, start_index - half_buffer)
+            end = min(len(sentence), end_index + half_buffer)
+
+            # Ensure we do not cut the sentence in the middle of words
+            if start > 0 and not sentence[start].isspace():
+                start = sentence.rfind(' ', 0, start) + 1
+            if end < len(sentence) and not sentence[end - 1].isspace():
+                end = sentence.rfind(' ', end)
+
+            # Truncate the sentence with ellipses where necessary
+            truncated_sentence = sentence[start:end]
+            if start > 0:
+                truncated_sentence = '...' + truncated_sentence
+            if end < len(sentence):
+                truncated_sentence = truncated_sentence + '...'
+
+            # Ensure the final result does not exceed max_length
+            if len(truncated_sentence) > max_length:
+                truncated_sentence = truncate_sentence(truncated_sentence, max_length)
+
+            return truncated_sentence
+
 
 
         # Load text from the file
@@ -932,10 +1015,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     sentence_cleaned = self.replace_broken_characters(sentence.strip())  # Clean broken characters
 
                     # If the sentence contains a keyword form, add it
-                    if match_keywords(forms, sentence_cleaned):
-                        if sentence_cleaned not in unique_sentences:
-                            unique_sentences.add(sentence_cleaned)
-                            keyword_sentences.append(sentence_cleaned)
+                    matched_sentence_trimmed = match_keywords(forms, sentence_cleaned, max_length)
+                    if matched_sentence_trimmed != False:
+                        if matched_sentence_trimmed not in unique_sentences:
+                            unique_sentences.add(matched_sentence_trimmed)
+                            keyword_sentences.append(matched_sentence_trimmed)
 
             # Store all sentences for this keyword under its original key
             if keyword_sentences:
@@ -952,52 +1036,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def truncate_sentence(self, sentence, max_length=200):
-            """Truncate the sentence at the last full word before exceeding the max length."""
-            if len(sentence) <= max_length:
-                return sentence
-            words = sentence[:max_length].split()
-            truncated_sentence = ' '.join(words[:-1]) + '...' if len(words) > 1 else words[0] + '...'
-            return truncated_sentence
-
-        # Truncate long sentences without cutting words
-    def truncate_sentence_around_keyword(self, sentence, keyword, max_length=200, buffer=50):
-        """
-        Truncate the sentence around the keyword, ensuring the keyword is visible.
-        max_length: Maximum length of the truncated sentence.
-        buffer: How much text (in characters) to show before and after the keyword.
-        """
-        # Find where the keyword appears in the sentence (case-insensitive)
-        match = re.search(r'\b{}\b'.format(re.escape(keyword)), sentence, re.IGNORECASE)
-
-        if not match:
-            # If the keyword is not found, truncate the sentence without cutting words
-            return self.truncate_sentence(sentence, max_length)
-
-        start_index = match.start()
-        end_index = match.end()
-
-        # Calculate where to start and end the truncation (ensure buffer is within bounds)
-        start = max(0, start_index - buffer)
-        end = min(len(sentence), end_index + buffer)
-
-        # Ensure we do not cut the sentence in the middle of words
-        # Adjust the start position to the nearest space after it (if it's not the beginning)
-        if start > 0 and not sentence[start].isspace():
-            start = sentence.rfind(' ', 0, start) + 1  # Move to the next word boundary
-
-        # Adjust the end position to the nearest space before it (if it's not the end)
-        if end < len(sentence) and not sentence[end - 1].isspace():
-            end = sentence.rfind(' ', end)
-
-        # Truncate the sentence with ellipses where necessary
-        truncated_sentence = sentence[start:end]
-        if start > 0:
-            truncated_sentence = '...' + truncated_sentence
-        if end < len(sentence):
-            truncated_sentence = truncated_sentence + '...'
-
-        return truncated_sentence
                             
 ########################################## TEXT PARSING END ##########################################
 ########################################## TEXT PARSING END ##########################################
@@ -1016,7 +1054,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         os.makedirs(self.text_presets_dir, exist_ok=True)
         os.makedirs(self.session_presets_dir, exist_ok=True)
         os.makedirs(self.theme_presets_dir, exist_ok=True)  # Create the theme presets directory
-        print(f"Created directories: {self.presets_dir}, {self.text_presets_dir}, {self.session_presets_dir}, {self.theme_presets_dir}")
+
+        os.makedirs(self.rainmeter_presets_dir, exist_ok=True)  # Create the theme presets directory
+        os.makedirs(self.rainmeter_deleted_files_dir, exist_ok=True)  # Create the theme presets directory
+
+        print(f"Created directories: {self.presets_dir}, {self.text_presets_dir}, {self.session_presets_dir}, {self.theme_presets_dir}, {self.rainmeter_presets_dir}, {self.rainmeter_deleted_files_dir}")
 
 
     def save_session_presets(self):
@@ -1126,6 +1168,141 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Reload the presets
         self.load_presets(use_cache=False)
+
+
+
+
+    def create_rainmeter_preset(self):
+        """Create a Rainmeter preset based on the selected sentence preset."""
+        # Get the selected row
+        self.init_styles()
+        selected_row = self.table_sentences_selection.currentRow()
+
+        # Check if a row is actually selected
+        if selected_row == -1:
+            self.show_info_message('Warning', 'No preset selected.')
+            return
+
+        # Get the file name from the first column of the selected row
+        file_item = self.table_sentences_selection.item(selected_row, 0)
+        if not file_item:
+            self.show_info_message('Warning', 'No file associated with the selected preset.')
+            return
+
+        # Construct the preset name
+        preset_name = file_item.text()
+        preset_folder_name = f"rainmeter_text_{preset_name}"
+
+        # Determine the base directory based on whether the app is running as a PyInstaller bundle
+        if getattr(sys, 'frozen', False):
+            temp_dir = sys._MEIPASS
+            self.rainmeter_files_dir = os.path.join(temp_dir, 'rainmeter_files')
+        else:
+            self.rainmeter_files_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rainmeter_files')
+
+        # Define the destination path
+        destination_folder = os.path.join(self.rainmeter_presets_dir, preset_folder_name)
+
+        # Remove the existing folder if it exists
+        if os.path.exists(destination_folder):
+            for root, dirs, files in os.walk(destination_folder, topdown=False):
+                for file in files:
+                    os.remove(os.path.join(root, file))
+                for dir in dirs:
+                    os.rmdir(os.path.join(root, dir))
+            os.rmdir(destination_folder)
+
+        # Create the destination folder
+        os.makedirs(destination_folder, exist_ok=True)
+
+        # Define file paths
+        ini_file_source = os.path.join(self.rainmeter_files_dir, "TEXT_SLIDESHOW.ini")
+        lua_file_source = os.path.join(self.rainmeter_files_dir, "TEXT_SLIDESHOW.lua")
+        ini_file_destination = os.path.join(destination_folder, "TEXT_SLIDESHOW.ini")
+        lua_file_destination = os.path.join(destination_folder, "TEXT_SLIDESHOW.lua")
+
+
+
+        def rgb_to_rgba(rgb_str):
+            # Use regex to extract the RGB values, allowing optional spaces after commas
+            match = re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', rgb_str)
+            if match:
+                # Extract the RGB values and convert them to integers
+                r, g, b = map(int, match.groups())
+                # Return the RGBA string with alpha value 255
+                return f"{r}, {g}, {b}, 255"
+            else:
+                raise ValueError("Invalid RGB format")
+
+        def luminance(text_color):
+            # Parse the string to extract the RGB values
+            text_color = tuple(map(int, text_color.replace(" ", "").split(',')))
+
+            r, g, b, a = text_color
+            # Calculate luminance using the formula
+            luminance_value = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            # Determine the background color based on the luminance value
+            if luminance_value > 127.5:  # If the color is bright enough
+                return "0, 0, 0, 100"  # Dark background
+            else:
+                return "255, 255, 255, 225"  # Light background
+
+        try:
+            # Copy the Lua file without modifications
+            if os.path.exists(lua_file_source):
+                with open(lua_file_source, 'rb') as src:
+                    with open(lua_file_destination, 'wb') as dst:
+                        dst.write(src.read())
+            else:
+                raise FileNotFoundError(f"Lua file not found at {lua_file_source}")
+
+            # Read and modify the INI file
+            if os.path.exists(ini_file_source):
+                with open(ini_file_source, "r") as ini_file:
+                    ini_content = ini_file.read()
+
+                # Replace placeholders in the INI file
+                selected_preset_path = os.path.join(self.text_presets_dir, f"{preset_name}.txt")
+                ini_content = ini_content.replace(r'TextPreset = TextPreset', r'TextPreset = ' + selected_preset_path)
+                ini_content = ini_content.replace(r'DeletedFilesFolder = DeletedFilesFolder', r'DeletedFilesFolder =' + self.rainmeter_deleted_files_dir + '\\')
+
+                ini_content = ini_content.replace(r'Title = Title', r'Title =' + f"{preset_name}")
+
+
+
+
+                ini_content = ini_content.replace(r'FontColor = FontColor', r'FontColor =' + f"{rgb_to_rgba(self.color_settings['text_color'])}")
+                ini_content = ini_content.replace(r'BracketColor1 = BracketColor1', r'BracketColor1 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_1'])}")
+                ini_content = ini_content.replace(r'BracketColor2 = BracketColor2', r'BracketColor2 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_2'])}")
+                ini_content = ini_content.replace(r'BracketColor3 = BracketColor3', r'BracketColor3 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_3'])}")
+                ini_content = ini_content.replace(r'BracketColor4 = BracketColor4', r'BracketColor4 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_4'])}")
+                ini_content = ini_content.replace(r'BracketColor5 = BracketColor5', r'BracketColor5 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_5'])}")
+                ini_content = ini_content.replace(r'BracketColor6 = BracketColor6', r'BracketColor6 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_6'])}")
+                ini_content = ini_content.replace(r'BracketColor7 = BracketColor7', r'BracketColor7 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_7'])}")
+                ini_content = ini_content.replace(r'BracketColor8 = BracketColor8', r'BracketColor8 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_8'])}")
+                ini_content = ini_content.replace(r'BracketColor9 = BracketColor9', r'BracketColor9 =' + f"{rgb_to_rgba(self.color_settings['highlight_color_9'])}")
+
+
+
+                background_color = luminance(rgb_to_rgba(self.color_settings['text_color']))
+                ini_content = ini_content.replace(r'Backgroundcolor = Backgroundcolor', r'Backgroundcolor = ' + f"{background_color}")
+
+                ini_content = ini_content.replace(r'MouseScrollDownAction = MouseScrollDownAction', r'MouseScrollDownAction =' + f' [!DeactivateConfig "{preset_folder_name}"]')
+                
+
+                # Write the modified content to the destination INI file
+                with open(ini_file_destination, "w") as ini_file:
+                    ini_file.write(ini_content)
+            else:
+                raise FileNotFoundError(f"INI file not found at {ini_file_source}")
+
+            # Open File Explorer and select the newly created folder
+            subprocess.run(["explorer", "/select,", os.path.abspath(destination_folder)])
+
+            self.show_info_message("Success", f'Rainmeter preset "{preset_folder_name}" created successfully!')
+
+        except Exception as e:
+            self.show_info_message("Error", f"Failed to create Rainmeter preset. Error: {str(e)}")
 
 
     def delete_presets_files(self):
@@ -1795,11 +1972,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.setMinimumSize(QtCore.QSize(550, 200))
         self.clipboard_settings = clipboard_settings
 
-    def resizeEvent(self, event):
-        super(SessionDisplay, self).resizeEvent(event)
-        # Adjust the grid overlay to match the new image size and position
-        self.grid_overlay.setGeometry(self.image_display.geometry())
-        
+
     def eventFilter(self, source, event):
         if source == self.lineEdit and event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Backspace and event.modifiers() == QtCore.Qt.ShiftModifier:
@@ -2632,7 +2805,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         transparent_pixmap = QtGui.QPixmap(1, 1)
         transparent_pixmap.fill(QtCore.Qt.transparent)
 
-        # Set the image display to show the transparent image
+        # Set the text display to show the transparent image
         self.text_display.setPixmap(transparent_pixmap)
 
         # Stop the timer
@@ -3005,6 +3178,7 @@ class MaxLengthDelegate(QStyledItemDelegate):
 
             # Subclass to enable multifolder selection.
 
+
 class MultiFolderSelector(QtWidgets.QDialog):
     def __init__(self, parent=None, preset_name="preset_1"):
         super(MultiFolderSelector, self).__init__(parent)
@@ -3037,8 +3211,6 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.profile_dropdown = QtWidgets.QComboBox(self)
         self.profile_dropdown.addItems(self.keyword_profiles.keys())
         self.profile_dropdown.currentTextChanged.connect(self.load_profile_keywords)
-
-        
         layout.addWidget(self.profile_dropdown)
 
         # Scrollable text input for keywords
@@ -3055,6 +3227,22 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.keyword_input.setMinimumHeight(100)
         self.keyword_input.textChanged.connect(self.save_current_profile_keywords)
         layout.addWidget(self.keyword_input)
+
+        # Max Length Input Field
+        max_length_layout = QtWidgets.QHBoxLayout()
+        
+        # Label for max length
+        self.max_length_label = QtWidgets.QLabel("Max Length:", self)
+        max_length_layout.addWidget(self.max_length_label)
+
+        # Input for max length
+        self.max_length_edit = QtWidgets.QLineEdit(self)
+        self.max_length_edit.setPlaceholderText("Enter max sentence length (default: 200 characters)")
+        self.max_length_edit.setText("200")  # Default value
+        self.max_length_edit.setValidator(QtGui.QIntValidator(1, 10000, self))  # Only positive integers allowed
+        max_length_layout.addWidget(self.max_length_edit)
+
+        layout.addLayout(max_length_layout)
 
         # Checkbox for "Highlight Keywords"
         self.highlight_keywords_checkbox = QtWidgets.QCheckBox("Highlight Keywords", self)
@@ -3102,6 +3290,13 @@ class MultiFolderSelector(QtWidgets.QDialog):
 
         self.init_message_boxes()
         self.keyword_input.setFocus()
+
+    def get_max_length(self):
+        """Return the max sentence length as an integer, or 200 if invalid."""
+        try:
+            return int(self.max_length_edit.text())
+        except ValueError:
+            return 200
 
     def get_highlight_keywords_option(self):
         return self.highlight_keywords_checkbox.isChecked()
@@ -3221,6 +3416,11 @@ class MultiFolderSelector(QtWidgets.QDialog):
             return  # Do not accept the dialog
 
         super(MultiFolderSelector, self).accept()
+
+
+
+
+
 
 class ThemeSelectorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, theme_presets_dir="", session_settings_file=""):

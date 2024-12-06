@@ -704,7 +704,7 @@
              <enum>Qt::NoFocus</enum>
             </property>
             <property name="toolTip">
-             <string>Remove preset from table and delete its file.</string>
+             <string/>
             </property>
             <property name="styleSheet">
              <string notr="true">background: rgb(220,220,220); color: 'black';</string>
@@ -717,6 +717,73 @@
               <width>24</width>
               <height>24</height>
              </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="topMargin">
+             <number>15</number>
+            </property>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="rainmeter_preset_button">
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>77</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background: rgb(220,220,220); color: 'black';</string>
+            </property>
+            <property name="text">
+             <string>Rainmeter</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+           </layout>
+          </item>
+          <item>
+           <widget class="QPushButton" name="open_preset_button">
+            <property name="minimumSize">
+             <size>
+              <width>50</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>77</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background: rgb(220,220,220); color: 'black';</string>
+            </property>
+            <property name="text">
+             <string>Open preset</string>
             </property>
            </widget>
           </item>
@@ -740,31 +807,6 @@
                <number>0</number>
               </property>
              </layout>
-            </item>
-            <item>
-             <widget class="QPushButton" name="open_preset_button">
-              <property name="minimumSize">
-               <size>
-                <width>50</width>
-                <height>25</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>77</width>
-                <height>20</height>
-               </size>
-              </property>
-              <property name="focusPolicy">
-               <enum>Qt::NoFocus</enum>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">background: rgb(220,220,220); color: 'black';</string>
-              </property>
-              <property name="text">
-               <string>Open preset</string>
-              </property>
-             </widget>
             </item>
            </layout>
           </item>
@@ -972,7 +1014,7 @@
              <enum>Qt::NoFocus</enum>
             </property>
             <property name="toolTip">
-             <string>Add image files from folder(s).</string>
+             <string/>
             </property>
             <property name="autoFillBackground">
              <bool>false</bool>
@@ -1220,7 +1262,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Save preset and add it to the table.</string>
+         <string/>
         </property>
         <property name="autoFillBackground">
          <bool>false</bool>
@@ -1264,7 +1306,7 @@
          <enum>Qt::NoFocus</enum>
         </property>
         <property name="toolTip">
-         <string>Remove preset from table and delete its file.</string>
+         <string/>
         </property>
         <property name="styleSheet">
          <string notr="true">background: rgb(220,220,220); color: 'black';</string>
