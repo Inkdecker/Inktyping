@@ -4,7 +4,7 @@
     "randomize_settings": false,
     "auto_start_settings": false,
     "clipboard_settings": false,
-    "theme_settings": "light_theme.txt",
+    "theme_settings": "default_theme.txt",
     "shortcuts": {
         "main_window": {
             "start": "S",
