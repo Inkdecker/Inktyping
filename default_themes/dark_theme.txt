@@ -91,7 +91,11 @@
         "highlight_color_7": "rgb(207, 134, 32)",
         "highlight_color_8": "rgb(207, 134, 32)",
         "highlight_color_9": "rgb(207, 134, 32)",
-        "always_on_top_border": "rgb(220,220,220);"
+        "always_on_top_border": "rgb(220,220,220);",
+        "metadata_font_size": 10,
+        "metadata_background": "rgb(40,40,40)",
+        "metadata_color": "rgb(128,128,128)",
+        "metadata_padding": "0 5 2 0"
     },
     "lineEdit": {
         "QWidget": "color: rgb(220, 220, 220);background: rgb(60, 60, 60);padding: 0 30px; border: 2px solid rgb(110, 110, 110);selection-background-color: rgb(100, 100, 100);"

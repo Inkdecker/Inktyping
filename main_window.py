@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\Adamska\Desktop\ART TUTORIALS\SHORTCUTS & STUFF\session_writing\ui\main_window.ui'
+# Form implementation generated from reading ui file 'D:\Desktop\ART TUTORIALS\SHORTCUTS & STUFF\session_writing\ui\main_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
@@ -278,7 +278,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.setObjectName("verticalLayout_6")
         self.verticalLayout.addLayout(self.verticalLayout_6)
         self.rainmeter_preset_button = QtWidgets.QPushButton(self.centralwidget)
-        self.rainmeter_preset_button.setMinimumSize(QtCore.QSize(50, 20))
+        self.rainmeter_preset_button.setMinimumSize(QtCore.QSize(50, 22))
         self.rainmeter_preset_button.setMaximumSize(QtCore.QSize(77, 20))
         self.rainmeter_preset_button.setFocusPolicy(QtCore.Qt.NoFocus)
         self.rainmeter_preset_button.setToolTip("")
@@ -290,7 +290,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName("verticalLayout_7")
         self.verticalLayout.addLayout(self.verticalLayout_7)
         self.open_preset_button = QtWidgets.QPushButton(self.centralwidget)
-        self.open_preset_button.setMinimumSize(QtCore.QSize(50, 20))
+        self.open_preset_button.setMinimumSize(QtCore.QSize(50, 22))
         self.open_preset_button.setMaximumSize(QtCore.QSize(77, 20))
         self.open_preset_button.setToolTip("")
         self.open_preset_button.setStyleSheet("background: rgb(220,220,220); color: \'black\';")

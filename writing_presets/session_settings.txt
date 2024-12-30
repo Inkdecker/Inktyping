@@ -1,5 +1,5 @@
 {
-    "selected_sentence_row": 1,
+    "selected_sentence_row": 0,
     "selected_session_row": 0,
     "randomize_settings": false,
     "auto_start_settings": false,
@@ -23,6 +23,7 @@
             "copy_plain_text": "C",
             "copy_highlighted_text": "Ctrl+C",
             "toggle_clipboard": "Shift+C",
+            "toggle_metadata": "F2",
             "delete_sentence": "Ctrl+D",
             "zoom_in": "Q",
             "zoom_out": "D",
