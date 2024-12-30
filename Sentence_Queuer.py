@@ -608,12 +608,17 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         print("cache selected_sentence_row", selected_sentence_row)
         print("cache session_selection_cache", selected_preset_row)
 
+
+
     def create_preset(self, folder_list=None, keyword_profiles=None, preset_name="preset_output", highlight_keywords=True, 
                       output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True):
         """
         Opens a dialog for folder selection, collects keyword profiles, and processes all EPUB, PDF, and TXT files 
         within the selected folders using the chosen profiles. Combines results from all folders.
         """
+        # Initialize selected_dirs
+        selected_dirs = folder_list if folder_list else []
+
         if is_gui:
             self.update_selection_cache()
             preset_name = f'preset_{self.get_next_preset_number()}'
@@ -632,16 +637,22 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 if not selected_dirs:
                     self.show_info_message('No Selection', 'No folders were selected.')
                     return
-
+                
                 keyword_profiles = dialog.get_all_keyword_profiles()
-        else:
-            selected_dirs = folder_list
+            else:
+                return
+
+        # Ensure we have directories to process
+        if not selected_dirs:
+            if is_gui:
+                self.show_info_message('No Selection', 'No folders were selected.')
+            return
 
         # Dictionary to store all results
         all_results = {}
         total_sentences = 0  # Counter for total unique sentences
 
-        # Process each directory and collect results
+        # Rest of the function remains the same...
         for directory in selected_dirs:
             if os.path.isdir(directory):
                 folder_results, folder_path = self.process_epub_folder(
@@ -3489,8 +3500,8 @@ class MultiFolderSelector(QtWidgets.QDialog):
             "Enter keywords (one per line)\n\n"
             "\"Keyword\" : search for both singular and plural forms\n"
             "\"&Keyword\" : search the given form\n\n"
-            "\"Keyword1 + Keyword2\" : search for both keywords, either forms\n"
-            "\"&Keyword1 + &Keyword2\" : search for both keywords, given forms\n\n"
+            "\"Keyword1 + Keyword2 + ...\" : search for both keywords, either forms\n"
+            "\"&Keyword1 + &Keyword2 + ...\" : search for both keywords, given forms\n\n"
             "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
             "\"!&Keyword\" : ignore sentences with the given form\n\n"
             "\"#Keyword\" : highlight the given form without searching it\n"
@@ -3810,15 +3821,15 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest="command")
 
     # Subparser for "create_preset"
-    create_preset_parser = subparsers.add_parser("create_preset", help="Process EPUB folder")
-    create_preset_parser.add_argument("-folder_list", required=True, nargs="+", help="Path to the folder containing EPUB files")
+    create_preset_parser = subparsers.add_parser("create_preset", help="Process text folder")
+    create_preset_parser.add_argument("-folder_list", required=True, nargs="+", help="Path to the folder containing text files")
     create_preset_parser.add_argument("-keyword_profiles", required=True, type=json.loads, help="Profiles in JSON format")
     create_preset_parser.add_argument("-preset_name", default="preset_output", help="Name of the preset")
     create_preset_parser.add_argument("-highlight_keywords", type=lambda x: x.lower() == "true", default=True, help="Highlight keywords (True/False)")
     create_preset_parser.add_argument("-output_option", default="Single output", help="Output option")
-    create_preset_parser.add_argument("-max_length", type=int, default=200, help="Maximum sentence length")
     create_preset_parser.add_argument("-get_metadata", type=lambda x: x.lower() == "true", default=True, help="Extract metadata (True/False)")
-    create_preset_parser.add_argument("-output_folder", default=None, help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
+    create_preset_parser.add_argument("-max_length", type=int, default=200, help="Maximum sentence length")
+    create_preset_parser.add_argument("-output_folder", default=, help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
 
     # Subparser for "start_session_from_files"
     session_parser = subparsers.add_parser("start_session_from_files", help="Start session from files")
