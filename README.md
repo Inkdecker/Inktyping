@@ -82,7 +82,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
  
 ##### Example :
 ```batch
-session_writing.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\Desktop\Book_Folder_2" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [,\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
+session_writing.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\Desktop\Book_Folder_2" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
 ```
 ### Start session
 - **start_session_from_files**
