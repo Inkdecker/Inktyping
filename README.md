@@ -16,10 +16,11 @@ It can be used to either analyze text for research purposes or practice writing.
    	- Ability to customize themes, highlight colors and shortcuts
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
- 
-	- New: Ability to create Rainmeter profiles to export the slideshows
-	
 
+	- 04.12.2014: Ability to create Rainmeter profiles to export the slideshows
+	
+   	- (New) 30.12.2014 New: Main functions available from commande line and metadata extraction
+    
 ##### Supported files :  .txt, .epub, .pdf
 
 
@@ -39,13 +40,15 @@ Prefix | Result
 ------------ | -------------
 **Keyword** | search for both singular and plural forms [Keyword and Keywords]
 **&Keyword** | search the given form [Keyword]
+**Keyword1 + Keyword2 + ...** | search for multiple keywords in a sentence, either forms
+**&Keyword1 + &Keyword2 + ...** | search for multiple keywords in a sentence, given forms
 **!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
 **!&Keyword** | ignore sentences with the given form [ignore Keyword]
 **#Keyword** | highlight the given form without searching it
 **;Comment** | ignore line 
 
 
-3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. 
+3 - Check **"Highlight Keywords"** if you want your keywords to be highlighted in output files for later processing. Check **"Extract Metadata"** to add the following information to the sentences when available [Title, Author, Date].
 
 4 - Select **"Single output"** to store all the sentences into a single files, **"All output"** to produce additional files for each individual keywords.
 
@@ -65,6 +68,33 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
 > 
 > Note: Deleted sentences get stored inside a new text file send to the "..\rainmeter_presets\Deleted Files" folder. 
 
+## Command line
+### Create preset
+- **create_preset**
+  - **`-folder_list` (required)**: Path(s) to the folder(s) containing text files
+  - **`-keyword_profiles` (required)**: Profiles in JSON format
+  - **`-preset_name` (optional)**: Name of the preset |  *Default*: `"preset_output"`
+  - **`-highlight_keywords` (optional)**: Highlight keywords (`True`/`False`) | *Default*: `True`
+  - **`-output_option` (optional)**: Output option (`"Single output"`/`"All output"`) |  *Default*: `"Single output"`
+  - **`-max_length` (optional)**: Maximum sentence length (in characters) |  *Default*: `200`
+  - **`-get_metadata` (optional)**: Extract metadata (`True`/`False`) |  *Default*: `True`
+  - **`-output_folder` (optional)**: Folder to save the preset file
+ 
+##### Example :
+```batch
+Sentence_Queuer.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\Desktop\Book_Folder_2" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [,\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
+```
+### Start session
+- **start_session_from_files**
+  - **`-sentence_preset_path` (required)**: Path to the sentence preset file
+  - **`-session_preset_path` (required)**: Path to the session preset file
+  - **`-randomize_settings` (optional)**: Randomize settings (`True`/`False`)  |  *Default*: `True`
+  - **`-clipboard_settings` (optional)**: Clipboard keywords (`True`/`False`) | *Default*: `False`
+ 
+##### Example :
+```batch
+Sentence_Queuer.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
+```
 
 ## Troubleshooting 
 - Delete the **session_settings.txt** to reset settings and shortcuts.
