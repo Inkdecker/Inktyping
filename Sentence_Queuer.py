@@ -608,9 +608,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         print("cache selected_sentence_row", selected_sentence_row)
         print("cache session_selection_cache", selected_preset_row)
 
-
     def create_preset(self, folder_list=None, keyword_profiles=None, preset_name="preset_output", highlight_keywords=True, 
-                     output_option="Single output", max_length=200, metadata_settings=True, is_gui=True):
+                      output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True):
         """
         Opens a dialog for folder selection, collects keyword profiles, and processes all EPUB, PDF, and TXT files 
         within the selected folders using the chosen profiles. Combines results from all folders.
@@ -629,7 +628,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 metadata_settings = dialog.get_extract_metadata_option()
                 preset_name = dialog.get_preset_name()
                 max_length = dialog.get_max_length()
-                
+
                 if not selected_dirs:
                     self.show_info_message('No Selection', 'No folders were selected.')
                     return
@@ -641,7 +640,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Dictionary to store all results
         all_results = {}
         total_sentences = 0  # Counter for total unique sentences
-        
+
         # Process each directory and collect results
         for directory in selected_dirs:
             if os.path.isdir(directory):
@@ -649,15 +648,19 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     directory, keyword_profiles, highlight_keywords, 
                     output_option, preset_name, max_length, metadata_settings
                 )
-                
+
                 # Merge results from this folder into all_results
                 for keyword, sentences in folder_results.items():
                     if keyword not in all_results:
                         all_results[keyword] = []
                     all_results[keyword].extend(sentences)
 
+        # Determine the output folder
+        target_folder = output_folder if output_folder else self.text_presets_dir
+        os.makedirs(target_folder, exist_ok=True)
+
         # Create the combined output file and count unique sentences
-        combined_output_path = os.path.join(self.text_presets_dir, f"{preset_name}.txt")
+        combined_output_path = os.path.join(target_folder, f"{preset_name}.txt")
         seen_sentences = set()
 
         with open(combined_output_path, 'w', encoding='utf-8') as output_file:
@@ -677,13 +680,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                         else:
                             output_file.write(f'{sentence}\n\n')
 
-
         # If "All output" is selected, create individual keyword files
         if output_option == "All output":
             for keyword, sentences in all_results.items():
                 if sentences:
                     keyword_output_path = os.path.join(
-                        self.text_presets_dir, f"{preset_name}_{keyword}.txt"
+                        target_folder, f"{preset_name}_{keyword}.txt"
                     )
                     with open(keyword_output_path, 'w', encoding='utf-8') as output_file:
                         for sentence, full_filepath in sentences:
@@ -699,12 +701,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     print(f"Sentences for keyword '{keyword}' saved to {keyword_output_path}")
 
         # Show summary message and reload presets if using GUI
-        summary_message = (f"Successfully extracted {total_sentences} unique sentences to : {preset_name}.txt !")
+        summary_message = (f"Successfully extracted {total_sentences} unique sentences to: {combined_output_path}!")
         if is_gui:
-
             self.show_info_message('Extraction Complete', summary_message)
             self.load_presets()
         print(summary_message)
+
 
 
     def create_keyword_profiles(self, keyword_input):
@@ -3801,7 +3803,6 @@ class ThemeSelectorDialog(QtWidgets.QDialog):
 
 
 
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
 
@@ -3817,6 +3818,7 @@ if __name__ == "__main__":
     create_preset_parser.add_argument("-output_option", default="Single output", help="Output option")
     create_preset_parser.add_argument("-max_length", type=int, default=200, help="Maximum sentence length")
     create_preset_parser.add_argument("-get_metadata", type=lambda x: x.lower() == "true", default=True, help="Extract metadata (True/False)")
+    create_preset_parser.add_argument("-output_folder", default=None, help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
 
     # Subparser for "start_session_from_files"
     session_parser = subparsers.add_parser("start_session_from_files", help="Start session from files")
@@ -3838,12 +3840,9 @@ if __name__ == "__main__":
             output_option=args.output_option,
             max_length=args.max_length,
             metadata_settings=args.get_metadata,
+            output_folder=args.output_folder,
             is_gui=False
         )
-
-
-
-
         app.quit()
 
     elif args.command == "start_session_from_files":
@@ -3860,5 +3859,6 @@ if __name__ == "__main__":
         # Default behavior: Start the GUI
         view = MainApp(show_main_window=True)
         sys.exit(app.exec_())
+
 
 
