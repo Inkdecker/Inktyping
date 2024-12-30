@@ -82,7 +82,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
  
 ##### Example :
 ```batch
-Sentence_Queuer.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\Desktop\Book_Folder_2" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [,\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
+session_writing.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\Desktop\Book_Folder_2" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [,\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
 ```
 ### Start session
 - **start_session_from_files**
@@ -93,7 +93,7 @@ Sentence_Queuer.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\De
  
 ##### Example :
 ```batch
-Sentence_Queuer.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
+session_writing.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
 ```
 
 ## Troubleshooting 
