@@ -4,7 +4,7 @@
 
 # <img src="https://raw.githubusercontent.com/Inkdecker/session_writing/refs/heads/main/ui/resources/icons/session_writing.png" width="25" style="vertical-align: middle;" /> Session Writing
 
-This is a free text mining tool users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
+This is a free toll for text exploration that users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
 
 It can be used to either analyze text for research purposes or practice writing.
 
