@@ -1,9 +1,9 @@
 {
-    "selected_sentence_row": -1,
-    "selected_session_row": 0,
+    "selected_sentence_row": 5,
+    "selected_session_row": 1,
     "randomize_settings": false,
     "auto_start_settings": false,
-    "clipboard_settings": false,
+    "autocopy_settings": false,
     "theme_settings": "default_theme.txt",
     "shortcuts": {
         "main_window": {
@@ -22,7 +22,7 @@
             "open_folder": "O",
             "copy_plain_text": "C",
             "copy_highlighted_text": "Ctrl+C",
-            "toggle_clipboard": "Shift+C",
+            "toggle_autocopy": "Shift+C",
             "toggle_metadata": "F2",
             "delete_sentence": "Ctrl+D",
             "zoom_in": "Q",
