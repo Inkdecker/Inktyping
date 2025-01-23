@@ -4,7 +4,7 @@
 
 # <img src="https://raw.githubusercontent.com/Inkdecker/session_writing/refs/heads/main/ui/resources/icons/session_writing.png" width="25" style="vertical-align: middle;" /> Session Writing
 
-This is a free text mining tool users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
+This is a free toll for text exploration that users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
 
 It can be used to either analyze text for research purposes or practice writing.
 
@@ -72,7 +72,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
 ### Create preset
 - **create_preset**
   - **`-folder_list` (required)**: Path(s) to the folder(s) containing text files
-  - **`-keyword_profiles` (required)**: Profiles in JSON format
+  - **`-keyword_profiles` (required)**: Profiles in JSON format `{'Highlight color 1': [], 'Highlight color 2': [], 'Highlight color 3': [], 'Highlight color 4': [], 'Highlight color 5': [], 'Highlight color 6': [], 'Highlight color 7': [], 'Highlight color 8': [], 'Highlight color 9': []}`
   - **`-preset_name` (optional)**: Name of the preset |  *Default*: `"preset_output"`
   - **`-highlight_keywords` (optional)**: Highlight keywords (`True`/`False`) | *Default*: `True`
   - **`-output_option` (optional)**: Output option (`"Single output"`/`"All output"`) |  *Default*: `"Single output"`
