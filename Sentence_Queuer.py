@@ -3,7 +3,8 @@ import sys
 import argparse
 import subprocess
 import random
-
+import concurrent.futures
+from functools import partial
 # Text stuff
 import re
 from ebooklib import epub, ITEM_DOCUMENT
@@ -67,7 +68,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 "open_folder": "O",
                 "copy_plain_text": "C",
                 "copy_highlighted_text": "Ctrl+C",
-                "toggle_clipboard": "Shift+C",
+                "toggle_autocopy": "Shift+C",
                 "toggle_metadata": "F2",
                 "delete_sentence": "Ctrl+D",
                 "zoom_in": "Q",
@@ -129,7 +130,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         
         # Initialize the randomize_settings variable or False depending on your default
         self.randomize_settings = True 
-        self.clipboard_settings = False  
+        self.autocopy_settings = False  
         self.auto_start_settings = False
 
         # Initialize cache variables
@@ -329,7 +330,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Toggles
         self.randomize_toggle.stateChanged.connect(self.update_randomize_settings)
-        self.clipboard_toggle.stateChanged.connect(self.update_clipboard_settings)
+        self.autocopy_toggle.stateChanged.connect(self.update_autocopy_settings)
         self.auto_start_toggle.stateChanged.connect(self.update_auto_start_settings)
 
         # Table selection handlers
@@ -542,7 +543,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     for selector, style in checkbox_styles.items():
                         style_sheet += f"{selector} {{{style}}}\n"
                     # Assuming self has checkboxes that need styling
-                    for checkbox_name in ["auto_start_toggle", "randomize_toggle","clipboard_toggle"]:
+                    for checkbox_name in ["auto_start_toggle", "randomize_toggle","autocopy_toggle"]:
                         if hasattr(self, checkbox_name):
                             checkbox = getattr(self, checkbox_name)
                             checkbox.setStyleSheet(style_sheet)
@@ -610,16 +611,25 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
+
+########################################## TEXT PARSING ##########################################
+########################################## TEXT PARSING ##########################################
+########################################## TEXT PARSING ##########################################
+
     def create_preset(self, folder_list=None, keyword_profiles=None, preset_name="preset_output", highlight_keywords=True, 
-                      output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True):
+                      output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True, metadata_prefix=";;", multithreading=True):
         """
         Opens a dialog for folder selection, collects keyword profiles, and processes all EPUB, PDF, and TXT files 
         within the selected folders using the chosen profiles. Combines results from all folders.
+        Now supports optional multithreading for faster processing.
         """
+        # Start timer
+        self.load_presets()
         # Initialize selected_dirs
         selected_dirs = folder_list if folder_list else []
 
         if is_gui:
+            self.load_presets(use_cache=False)
             self.update_selection_cache()
             preset_name = f'preset_{self.get_next_preset_number()}'
             dialog = MultiFolderSelector(self, preset_name)
@@ -631,15 +641,16 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 highlight_keywords = dialog.get_highlight_keywords_option()
                 output_option = dialog.get_output_option()
                 metadata_settings = dialog.get_extract_metadata_option()
+                multithreading_settings = dialog.get_multithreading_option()
                 preset_name = dialog.get_preset_name()
                 max_length = dialog.get_max_length()
 
                 if not selected_dirs:
                     self.show_info_message('No Selection', 'No folders were selected.')
                     return
-                
                 keyword_profiles = dialog.get_all_keyword_profiles()
             else:
+
                 return
 
         # Ensure we have directories to process
@@ -652,19 +663,49 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         all_results = {}
         total_sentences = 0  # Counter for total unique sentences
 
-        # Rest of the function remains the same...
-        for directory in selected_dirs:
-            if os.path.isdir(directory):
-                folder_results, folder_path = self.process_epub_folder(
-                    directory, keyword_profiles, highlight_keywords, 
-                    output_option, preset_name, max_length, metadata_settings
-                )
+        # Process folders with or without multithreading
+        def process_single_folder(directory):
+            return self.process_epub_folder(
+                folder_path=directory,
+                keyword_profiles=keyword_profiles,
+                highlight_keywords=highlight_keywords,
+                output_option=output_option,
+                preset_name=preset_name,
+                max_length=max_length,
+                metadata_settings=metadata_settings
+            )
 
-                # Merge results from this folder into all_results
-                for keyword, sentences in folder_results.items():
-                    if keyword not in all_results:
-                        all_results[keyword] = []
-                    all_results[keyword].extend(sentences)
+
+        # Start timer    
+        start_time = time.time()
+
+
+
+        if multithreading:
+            print("MULTITHREADING : ON")
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future_to_dir = {executor.submit(process_single_folder, directory): directory for directory in selected_dirs}
+                for future in concurrent.futures.as_completed(future_to_dir):
+                    directory = future_to_dir[future]
+                    try:
+                        folder_results = future.result()
+                        # Merge results
+                        for keyword, sentences in folder_results.items():
+                            if keyword not in all_results:
+                                all_results[keyword] = []
+                            all_results[keyword].extend(sentences)
+                    except Exception as exc:
+                        print(f"Error processing folder {directory}: {exc}")
+        else:
+            print("MULTITHREADING : OFF")
+            for directory in selected_dirs:
+                if os.path.isdir(directory):
+                    folder_results = process_single_folder(directory)
+                    # Merge results
+                    for keyword, sentences in folder_results.items():
+                        if keyword not in all_results:
+                            all_results[keyword] = []
+                        all_results[keyword].extend(sentences)
 
         # Determine the output folder
         target_folder = output_folder if output_folder else self.text_presets_dir
@@ -676,19 +717,16 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         with open(combined_output_path, 'w', encoding='utf-8') as output_file:
             for sentences in all_results.values():
-                for sentence, full_filepath in sentences:
-                    sentence_key = (sentence, full_filepath)
+                for sentence_data in sentences:
+                    sentence_key = (sentence_data[0], sentence_data[1])  # sentence and filepath
                     if sentence_key not in seen_sentences:
                         seen_sentences.add(sentence_key)
                         total_sentences += 1
                         if metadata_settings:
-                            try:
-                                metadata = self.get_book_metadata(full_filepath)
-                                output_file.write(f'["""{sentence}""","""{metadata}"""]\n\n')
-                            except Exception as e:
-                                print(f"Error extracting metadata from {os.path.basename(full_filepath)}: {e}")
-                                output_file.write(f'{sentence}\n\n')
+                            sentence, filepath, metadata = sentence_data  # Now includes metadata
+                            output_file.write(f'["""{sentence}""","""{metadata}"""]\n\n')
                         else:
+                            sentence = sentence_data[0]
                             output_file.write(f'{sentence}\n\n')
 
         # If "All output" is selected, create individual keyword files
@@ -699,24 +737,29 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                         target_folder, f"{preset_name}_{keyword}.txt"
                     )
                     with open(keyword_output_path, 'w', encoding='utf-8') as output_file:
-                        for sentence, full_filepath in sentences:
+                        for sentence_data in sentences:
                             if metadata_settings:
-                                try:
-                                    metadata = self.get_book_metadata(full_filepath)
-                                    output_file.write(f'["""{sentence}""","""{metadata}"""]\n\n')
-                                except Exception as e:
-                                    print(f"Error extracting metadata from {os.path.basename(full_filepath)}: {e}")
-                                    output_file.write(f'{sentence}\n\n')
+                                sentence, filepath, metadata = sentence_data
+                                output_file.write(f'["""{sentence}""","""{metadata}"""]\n\n')
                             else:
+                                sentence = sentence_data[0]
                                 output_file.write(f'{sentence}\n\n')
-                    print(f"Sentences for keyword '{keyword}' saved to {keyword_output_path}")
+
+        # End timer and calculate elapsed time
+        elapsed_time = time.time() - start_time
 
         # Show summary message and reload presets if using GUI
-        summary_message = (f"Successfully extracted {total_sentences} unique sentences to: {combined_output_path}!")
+        summary_message = (f"Successfully extracted {total_sentences} unique sentences to: {preset_name}.txt in {elapsed_time:.2f} seconds!")
         if is_gui:
             self.show_info_message('Extraction Complete', summary_message)
             self.load_presets()
         print(summary_message)
+
+
+
+
+
+
 
 
 
@@ -741,24 +784,57 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
+    def process_epub_folder_parallel(self, selected_dirs, keyword_profiles, highlight_keywords, output_option, preset_name, max_length, metadata_settings, multithreading=False):
+        """
+        Process multiple folders in parallel if multithreading is enabled.
+        """
+        all_results = {}
+
+        def process_single_folder(directory):
+            return self.process_epub_folder(
+                folder_path=directory,
+                keyword_profiles=keyword_profiles,
+                highlight_keywords=highlight_keywords,
+                output_option=output_option,
+                preset_name=preset_name,
+                max_length=max_length,
+                metadata_settings=metadata_settings
+            )
+
+        if multithreading:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future_to_dir = {executor.submit(process_single_folder, directory): directory for directory in selected_dirs}
+                for future in concurrent.futures.as_completed(future_to_dir):
+                    directory = future_to_dir[future]
+                    try:
+                        folder_results = future.result()
+                        # Merge results
+                        for keyword, sentences in folder_results.items():
+                            if keyword not in all_results:
+                                all_results[keyword] = []
+                            all_results[keyword].extend(sentences)
+                    except Exception as exc:
+                        print(f"Error processing folder {directory}: {exc}")
+        else:
+            # Sequential processing
+            for directory in selected_dirs:
+                if os.path.isdir(directory):
+                    folder_results = process_single_folder(directory)
+                    # Merge results
+                    for keyword, sentences in folder_results.items():
+                        if keyword not in all_results:
+                            all_results[keyword] = []
+                        all_results[keyword].extend(sentences)
+
+        return all_results
 
 
-########################################## TEXT PARSING ##########################################
-########################################## TEXT PARSING ##########################################
-########################################## TEXT PARSING ##########################################
-    def process_epub_folder(self, folder_path, keyword_profiles, highlight_keywords=True, output_option="Single output", preset_name="preset_output", max_length=200, metadata_settings=True):
+
+    def process_epub_folder(self, folder_path, keyword_profiles, highlight_keywords=True, output_option="Single output", preset_name="preset_output", max_length=200, metadata_settings=True, metadata_prefix=";;"):
         """
         Process a folder of EPUB, PDF, or text files and return the extracted sentences.
         Returns a tuple of (filtered_sentences, folder_path) where filtered_sentences is a dictionary
         of keyword-sentence pairs with their complete file paths.
-        """
-        """
-        print("folder_path:", folder_path,
-              "profiles:", keyword_profiles,
-              "highlight_keywords:", highlight_keywords,
-              "output_option:", output_option,
-              "preset_name:", preset_name,
-              "max_length:", max_length)
         """
         # Process ignored keywords
         ignored_keywords = [
@@ -781,8 +857,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Remove duplicates from ignored keywords
         ignored_keywords = list(set(ignored_keywords))
 
-        print("Keywords by profile (unique):", keyword_profiles)
-        print("Ignored keywords (unique):", ignored_keywords)
+        #print("Keywords by profile (unique)[0:5]:", keyword_profiles)
+        #print("Ignored keywords (unique)[0:5]:", ignored_keywords)
 
         # Gather all files in the specified folder
         file_paths = [
@@ -809,15 +885,14 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             if keywords:
                 self.extract_sentences_with_keywords(
                     file_paths, keywords, combined_sentences, 
-                    processed_keywords, max_length
+                    processed_keywords, max_length, metadata_settings, metadata_prefix
                 )
 
         # Filter out sentences with ignored keywords and store full file paths
         filtered_sentences = {
             keyword: [
-                (sentence, os.path.join(folder_path, filename)) 
-                for sentence, filename in sentences
-                if not self.contains_ignored_keyword(sentence, ignored_keywords)
+                sentence_data for sentence_data in sentences
+                if not self.contains_ignored_keyword(sentence_data[0], ignored_keywords)
             ]
             for keyword, sentences in combined_sentences.items()
         }
@@ -831,16 +906,21 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 filtered_sentences, keyword_profiles, processed_keywords
             )
 
-        return filtered_sentences, folder_path
+        return filtered_sentences
 
-    def get_book_metadata(self, file_path):
+    def get_book_metadata(self, file_path, metadata_prefix=";;"):
         """
         Extract metadata from book files.
-        Returns a tuple of (title, author, date).
-        Falls back to filename for title if metadata unavailable.
+        Returns metadata string with optional prefix from filename.
         """
         filename = os.path.basename(file_path)
-        filename_without_ext = os.path.splitext(filename)[0].replace('_', ' ')
+        filename_without_ext = os.path.splitext(filename)[0]
+        
+        # Extract prefix if present
+        prefix = ""
+        if metadata_prefix in filename_without_ext:
+            prefix, rest = filename_without_ext.split(metadata_prefix, 1)
+            filename_without_ext = rest.replace('_', ' ').strip()
         
         # Default values
         title = filename_without_ext
@@ -862,7 +942,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Get date
                 if book.get_metadata('DC', 'date'):
                     date = book.get_metadata('DC', 'date')[0][0]
-                    # Try to extract just the year if it's a full date
                     year_match = re.search(r'\d{4}', date)
                     if year_match:
                         date = year_match.group(0)
@@ -871,28 +950,21 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 with open(file_path, 'rb') as file:
                     reader = PyPDF2.PdfReader(file)
                     if reader.metadata:
-                        # Get title
                         if reader.metadata.get('/Title'):
                             title = reader.metadata['/Title']
-                        
-                        # Get author
                         if reader.metadata.get('/Author'):
                             author = reader.metadata['/Author']
-                        
-                        # Get date
                         if reader.metadata.get('/CreationDate'):
                             date_str = reader.metadata['/CreationDate']
-                            # Try to extract year from PDF date format (D:YYYYMMDDHHmmSS)
                             year_match = re.search(r'D:(\d{4})', date_str)
                             if year_match:
                                 date = year_match.group(1)
             
-            # Clean up any potential issues in the metadata
+            # Clean up metadata
             title = title.strip()
             author = author.strip()
             date = date.strip()
             
-            # If title is empty, use filename
             if not title:
                 title = filename_without_ext
                 
@@ -900,8 +972,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             print(f"Error extracting metadata from {filename}: {str(e)}")
             title = filename_without_ext
         
-        # Format the metadata string
-        metadata = f"{title}"
+        # Format the metadata string with prefix
+        metadata = prefix.strip()
+        if metadata:
+            metadata += " - "
+        metadata += title
         if author != "Unknown Author":
             metadata += f" by {author}"
         if date != "Unknown Date":
@@ -963,6 +1038,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def process_highlight_keywords(self, filtered_sentences, profiles, processed_keywords):
         """
         Highlight keywords and their forms in sentences with the appropriate number of brackets based on the profile name.
+        Updated to handle metadata in sentence data.
         """
         for profile_name, keywords in profiles.items():
             # Extract the numeric part from the profile name (e.g., 'Keywords_1' -> 1)
@@ -992,16 +1068,22 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 )
 
                 # Highlight keywords in all sentences
-                for key, sentence_pairs in filtered_sentences.items():
-                    for i, (sentence, filename) in enumerate(sentence_pairs):
+                for key, sentence_data_list in filtered_sentences.items():
+                    for i, sentence_data in enumerate(sentence_data_list):
                         def replace_func(match):
                             # Wrap the matched word in the appropriate brackets
                             original_word = match.group(0)
                             return f"{left_bracket}{original_word}{right_bracket}"
 
-                        # Update the sentence with highlighted keywords, preserving the filename
-                        highlighted_sentence = pattern.sub(replace_func, sentence)
-                        filtered_sentences[key][i] = (highlighted_sentence, filename)
+                        # Update the sentence with highlighted keywords, preserving the metadata
+                        if len(sentence_data) == 3:  # If we have metadata
+                            sentence, filepath, metadata = sentence_data
+                            highlighted_sentence = pattern.sub(replace_func, sentence)
+                            filtered_sentences[key][i] = (highlighted_sentence, filepath, metadata)
+                        else:  # If we don't have metadata
+                            sentence, filepath = sentence_data
+                            highlighted_sentence = pattern.sub(replace_func, sentence)
+                            filtered_sentences[key][i] = (highlighted_sentence, filepath)
 
                 # Add all forms to processed_keywords
                 for form in all_forms:
@@ -1054,27 +1136,19 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             return keyword
 
-
-
-
-    def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords, max_length):
+            
+    def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords, max_length, metadata_settings=True, metadata_prefix=";;"):
         """
         Extract sentences containing the provided keywords from the list of files.
-        Ensure each sentence is added once per keyword, even if it contains multiple forms of the same keyword.
-        Skip keywords if they or their forms have already been processed after all files are processed.
+        Optimized to process each file only once and pre-filter keywords.
         """
         def match_keywords(forms_list, exact_matches, sentence, max_length=200):
-            """
-            Check if all keyword forms from the combinations are found in the sentence.
-            Returns the truncated sentence if found, False otherwise.
-            """
             def find_keyword_in_sentence(forms, exact_match, sentence):
                 for form in forms:
                     if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
                         return form
                 return None
 
-            # Check if all parts of the combined keyword are present
             found_keywords = []
             for forms, exact_match in zip(forms_list, exact_matches):
                 found_keyword = find_keyword_in_sentence(forms, exact_match, sentence)
@@ -1082,37 +1156,26 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     return False
                 found_keywords.append(found_keyword)
 
-            # If all keywords are found, truncate around the first occurrence
             return truncate_sentence_around_keywords(sentence, found_keywords, max_length)
 
         def truncate_sentence_around_keywords(sentence, keywords, max_length=200):
-            """
-            Truncate the sentence around multiple keywords, ensuring all keywords are visible.
-            """
-            # Find all keyword positions
             positions = []
             for keyword in keywords:
                 match = re.search(r'\b{}\b'.format(re.escape(keyword)), sentence, re.IGNORECASE)
                 if match:
                     positions.append((match.start(), match.end()))
             
-            # Sort positions by start index
-            positions.sort()
-            
-            # Calculate the center point of all keywords
             if not positions:
                 return self.truncate_sentence(sentence, max_length)
             
+            positions.sort()
             start_pos = positions[0][0]
             end_pos = positions[-1][1]
-            center = (start_pos + end_pos) // 2
-            
-            # Calculate the amount of context to show
             context_length = (max_length - (end_pos - start_pos)) // 2
+            
             start = max(0, start_pos - context_length)
             end = min(len(sentence), end_pos + context_length)
             
-            # Adjust to word boundaries
             if start > 0:
                 start = sentence.rfind(' ', 0, start) + 1
             if end < len(sentence):
@@ -1126,49 +1189,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             
             return truncated
 
-        def truncate_sentence(sentence, max_length):
-            """Truncate the sentence to fit within max_length without cutting words."""
-            if len(sentence) <= max_length:
-                return sentence
-            words = sentence[:max_length].split()
-            truncated_sentence = ' '.join(words[:-1]) + '...' if len(words) > 1 else words[0] + '...'
-            return truncated_sentence
-
-        def truncate_sentence_around_keyword(sentence, keyword, max_length=200, buffer=50):
-            """
-            Truncate the sentence around the keyword, ensuring the keyword is visible.
-            max_length: Maximum length (in characters) of the truncated sentence.
-            buffer: How much text (in characters) to show before and after the keyword.
-            """
-            match = re.search(r'\b{}\b'.format(re.escape(keyword)), sentence, re.IGNORECASE)
-            if not match:
-                return truncate_sentence(sentence, max_length)
-
-            start_index = match.start()
-            end_index = match.end()
-
-            total_buffer = max_length - (end_index - start_index)
-            half_buffer = total_buffer // 2
-
-            start = max(0, start_index - half_buffer)
-            end = min(len(sentence), end_index + half_buffer)
-
-            if start > 0 and not sentence[start].isspace():
-                start = sentence.rfind(' ', 0, start) + 1
-            if end < len(sentence) and not sentence[end - 1].isspace():
-                end = sentence.rfind(' ', end)
-
-            truncated_sentence = sentence[start:end]
-            if start > 0:
-                truncated_sentence = '...' + truncated_sentence
-            if end < len(sentence):
-                truncated_sentence = truncated_sentence + '...'
-
-            if len(truncated_sentence) > max_length:
-                truncated_sentence = truncate_sentence(truncated_sentence, max_length)
-
-            return truncated_sentence
-
         def extract_text_from_epub(file_path):
             book = epub.read_epub(file_path)
             full_text = ""
@@ -1178,33 +1198,36 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 full_text += soup.get_text(separator=' ')
             return full_text
 
-        # Remove extra line breaks
         def clean_linebreaks(text):
-            """Remove extra line breaks and unnecessary whitespace."""
-            # Replace multiple line breaks with a single space
-            text = re.sub(r'(\n\s*)+', ' ', text)
-            # Strip leading/trailing spaces or line breaks
-            return text.strip()
+            return re.sub(r'(\n\s*)+', ' ', text).strip()
 
-        # Maintain a set of unique sentences
+        # Pre-process keywords and their forms
+        keyword_forms_map = {}
+        for keyword in keywords:
+            forms_list, exact_matches = self.get_keyword_forms(keyword)
+            # Skip if all forms have been processed
+            all_forms = [form.lower() for sublist in forms_list for form in sublist]
+            if all(form in processed_keywords for form in all_forms):
+                continue
+            keyword_forms_map[keyword] = (forms_list, exact_matches, all_forms)
+
         unique_sentences = set()
 
-        for keyword in keywords:
-            # Get forms for all parts of the combined keyword
-            forms_list, exact_matches = self.get_keyword_forms(keyword)
+        # Process each file once
+        for file_path in file_paths:
+            filename = os.path.basename(file_path)
             
-            # Check if all forms have been processed
-            all_forms = [form for sublist in forms_list for form in sublist]
-            forms_lower = [form.lower() for form in all_forms]
+            # Extract metadata once per file if needed
+            metadata = None
+            if metadata_settings:
+                try:
+                    metadata = self.get_book_metadata(file_path, metadata_prefix)
+                except Exception as e:
+                    print(f"Error extracting metadata from {filename}: {str(e)}")
+                    metadata = filename
             
-            if all(form in processed_keywords for form in forms_lower):
-                continue
-
-            keyword_sentences = []
-
-            for file_path in file_paths:
-                filename = os.path.basename(file_path)
-                    
+            # Read file content
+            try:
                 if file_path.endswith('.pdf'):
                     with open(file_path, 'rb') as file:
                         reader = PyPDF2.PdfReader(file)
@@ -1222,36 +1245,53 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     print(f"Unsupported file type: {file_path}")
                     continue
 
-                # Clean and split the text into sentences
-                full_text = clean_linebreaks(full_text)  # Clean up extra line breaks
+                # Clean and split text into sentences
+                full_text = clean_linebreaks(full_text)
+                
+                # Pre-filter keywords based on simple text matching
+                active_keywords = {}
+                for keyword, (forms_list, exact_matches, all_forms) in keyword_forms_map.items():
+                    # Check if any form of the keyword appears in the text
+                    if any(form.lower() in full_text.lower() for forms in forms_list for form in forms):
+                        active_keywords[keyword] = (forms_list, exact_matches)
+
+                if not active_keywords:
+                    continue  # Skip processing if no keywords found in file
+
+                # Process sentences only if we have matching keywords
                 sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?)\s', full_text)
-
-
+                
                 for sentence in sentences:
                     sentence_cleaned = self.replace_broken_characters(sentence.strip())
                     
-                    # Check for all parts of the combined keyword
-                    matched_sentence_trimmed = match_keywords(forms_list, exact_matches, sentence_cleaned, max_length=200)
-                    if matched_sentence_trimmed:
-                        sentence_pair = (matched_sentence_trimmed, filename)
-                        if sentence_pair not in unique_sentences:
-                            unique_sentences.add(sentence_pair)
-                            keyword_sentences.append(sentence_pair)
+                    # Check each active keyword
+                    for keyword, (forms_list, exact_matches) in active_keywords.items():
+                        matched_sentence_trimmed = match_keywords(forms_list, exact_matches, sentence_cleaned, max_length)
+                        if matched_sentence_trimmed:
+                            if metadata_settings:
+                                sentence_data = (matched_sentence_trimmed, file_path, metadata)
+                            else:
+                                sentence_data = (matched_sentence_trimmed, file_path)
+                                
+                            if sentence_data not in unique_sentences:
+                                unique_sentences.add(sentence_data)
+                                if keyword not in combined_sentences:
+                                    combined_sentences[keyword] = []
+                                combined_sentences[keyword].append(sentence_data)
 
-            if keyword_sentences:
-                # Store results under the original combined keyword
-                if keyword not in combined_sentences:
-                    combined_sentences[keyword] = []
-                combined_sentences[keyword].extend(keyword_sentences)
+            except Exception as e:
+                print(f"Error processing file {file_path}: {str(e)}")
+                continue
 
-            # Add all forms to processed_keywords
-            for form in all_forms:
-                processed_keywords.append(form.lower())
+        # Update processed keywords
+        for _, (_, _, all_forms) in keyword_forms_map.items():
+            processed_keywords.extend(all_forms)
 
-        print(f"Processed keywords: {processed_keywords}")
+        print(f"Processed keywords: {processed_keywords[0:5]} ...")
         print(f"Extracted {len(unique_sentences)} unique sentences.")
 
-                            
+
+                                
 ########################################## TEXT PARSING END ##########################################
 ########################################## TEXT PARSING END ##########################################
 ########################################## TEXT PARSING END ##########################################
@@ -1502,7 +1542,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 background_color = luminance(rgb_to_rgba(self.color_settings['text_color']))
                 ini_content = ini_content.replace(r'Backgroundcolor = Backgroundcolor', r'Backgroundcolor = ' + f"{background_color}")
 
-                ini_content = ini_content.replace(r'MouseScrollDownAction = MouseScrollDownAction', r'MouseScrollDownAction =' + f' [!DeactivateConfig "{preset_folder_name}"]')
                 
 
                 # Write the modified content to the destination INI file
@@ -1794,7 +1833,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def start_session_from_files(self, sentence_preset_path=None, session_preset_path=None, randomize_settings=True, clipboard_settings=False):
+    def start_session_from_files(self, sentence_preset_path=None, session_preset_path=None, randomize_settings=True, autocopy_settings=False):
         """
         Creates and runs SessionDisplay using information from the selected session and preset files.
         Handles both metadata and non-metadata sentence formats.
@@ -1941,7 +1980,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             schedule=self.session_schedule,
             items=selected_sentences,
             total=self.total_scheduled_sentences,
-            clipboard_settings=clipboard_settings,
+            autocopy_settings=autocopy_settings,
             themes_dir=self.theme_presets_dir,
             current_theme=self.current_theme
         )
@@ -1962,7 +2001,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "selected_session_row": -1,
             "randomize_settings": False,
             "auto_start_settings": False,
-            "clipboard_settings": False,
+            "autocopy_settings": False,
             "theme_settings": 'default_theme.txt',
             "shortcuts": self.default_shortcuts
         }
@@ -1989,13 +2028,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.shortcut_settings = current_settings.get('shortcuts', self.default_shortcuts)
         self.randomize_settings = current_settings.get('randomize_settings', False)
         self.auto_start_settings = current_settings.get('auto_start_settings', False)
-        self.clipboard_settings = current_settings.get('clipboard_settings', False)
+        self.autocopy_settings = current_settings.get('autocopy_settings', False)
         self.current_theme = current_settings.get('theme_settings', 'default_theme.txt')
 
         # Toggle the randomize and auto-start settings
         self.randomize_toggle.setChecked(self.randomize_settings)  # Toggle based on loaded value
         self.auto_start_toggle.setChecked(self.auto_start_settings)  # Toggle based on loaded value
-        self.clipboard_toggle.setChecked(self.clipboard_settings)  # Toggle based on loaded value
+        self.autocopy_toggle.setChecked(self.autocopy_settings)  # Toggle based on loaded value
 
         # --- Row selection logic ---
         selected_sentence_row = current_settings.get('selected_sentence_row', -1)
@@ -2026,7 +2065,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "selected_session_row": self.table_session_selection.currentRow(),
             "randomize_settings": self.randomize_settings,
             "auto_start_settings": self.auto_start_settings,
-            "clipboard_settings": self.clipboard_settings,
+            "autocopy_settings": self.autocopy_settings,
             "theme_settings": self.current_theme,
             "shortcuts": self.shortcut_settings
         }
@@ -2091,13 +2130,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         print("Shortcuts reset to defaults.")
 
 
-    def update_clipboard_settings(self, state):
-        """Update the clipboard_settings variable based on the checkbox state."""
+    def update_autocopy_settings(self, state):
+        """Update the autocopy_settings variable based on the checkbox state."""
         # Check if the checkbox is checked (Qt.Checked is 2, Qt.Unchecked is 0)
         if state == Qt.Checked:
-            self.clipboard_settings = True
+            self.autocopy_settings = True
         else:
-            self.clipboard_settings = False
+            self.autocopy_settings = False
 
     def update_randomize_settings(self, state):
         """Update the randomize_settings variable based on the checkbox state."""
@@ -2147,7 +2186,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 class SessionDisplay(QWidget, Ui_session_display):
     closed = QtCore.pyqtSignal() # Needed here for close event to work.
 
-    def __init__(self, file_path=None, shortcuts=None, schedule=None, items=None, total=None, clipboard_settings=None, themes_dir=None, current_theme=None):
+    def __init__(self, file_path=None, shortcuts=None, schedule=None, items=None, total=None, autocopy_settings=None, themes_dir=None, current_theme=None):
         super().__init__()
         self.setupUi(self)
 
@@ -2219,7 +2258,11 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         # Connect the resize event to update the border overlay
         self.setMinimumSize(QtCore.QSize(550, 200))
-        self.clipboard_settings = clipboard_settings
+        self.autocopy_settings = autocopy_settings
+
+        self.toggle_autocopy()
+
+
 
 
     def eventFilter(self, source, event):
@@ -2353,13 +2396,13 @@ class SessionDisplay(QWidget, Ui_session_display):
             print(f"Copied Plain Text: {clipboard_text}")
 
 
-    def toggle_clipboard(self):
-        if self.clipboard_settings:
-            self.clipboard_settings = False
+    def toggle_autocopy(self):
+        if self.autocopy_settings:
+            self.autocopy_settings = False
             self.clipboard_button.setChecked(False)
             print("Auto copy to clipboard : Off")
         else:
-            self.clipboard_settings = True
+            self.autocopy_settings = True
             self.clipboard_button.setChecked(True)
             print("Auto copy to clipboard : On")
 
@@ -2541,8 +2584,8 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.copy_sentence_button.clicked.connect(self.copy_sentence)
         self.copy_sentence_button.setToolTip(f"[{self.shortcuts['session_window']['copy_highlighted_text']}] Copy sentence to clipboard")
 
-        self.clipboard_button.clicked.connect(self.toggle_clipboard)
-        self.clipboard_button.setToolTip(f"[{self.shortcuts['session_window']['toggle_clipboard']}] Automatically copy current sentence to clipboard")
+        self.clipboard_button.clicked.connect(self.toggle_autocopy)
+        self.clipboard_button.setToolTip(f"[{self.shortcuts['session_window']['toggle_autocopy']}] Automatically copy current sentence to clipboard")
 
 
         self.metadata_button.clicked.connect(self.toggle_metadata)
@@ -2611,8 +2654,8 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.copy_plain_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_highlighted_text"]), self)
         self.copy_plain_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=True))
 
-        self.clipboard_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["toggle_clipboard"]), self)
-        self.clipboard_key.activated.connect(self.toggle_clipboard)
+        self.clipboard_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["toggle_autocopy"]), self)
+        self.clipboard_key.activated.connect(self.toggle_autocopy)
 
         self.metadata_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["toggle_metadata"]), self)
         self.metadata_key.activated.connect(self.toggle_metadata)
@@ -3009,7 +3052,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.time_seconds = self.entry['time']
         self.timer.start(500)
         self.entry['amount of items'] = int(self.schedule[self.entry['current']][1]) - 1
-        if self.clipboard_settings == True:
+        if self.autocopy_settings == True:
             self.copy_sentence()
             self.clipboard_button.setChecked(True)
 
@@ -3034,7 +3077,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         else:
             self.display_end_screen()  # Display end screen when at the end
 
-        if self.clipboard_settings == True:
+        if self.autocopy_settings == True:
             self.copy_sentence()
 
         self.lineEdit.clear()
@@ -3058,7 +3101,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         else:
             return  # Do nothing if at the start of the playlist
 
-        if self.clipboard_settings :
+        if self.autocopy_settings :
             self.copy_sentence()
 
         self.lineEdit.clear()
@@ -3538,6 +3581,11 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.extract_metadata_checkbox.setChecked(True)  # Check the checkbox by default
         layout.addWidget(self.extract_metadata_checkbox)
 
+        # Checkbox for "Multithreading setting"
+        #self.multithreading_checkbox = QtWidgets.QCheckBox("Multithreading", self)
+        #self.multithreading_checkbox.setChecked(False)  # Check the checkbox by default
+        #layout.addWidget(self.multithreading_checkbox)
+
 
         # Dropdown menu for output options
         self.output_option_dropdown = QtWidgets.QComboBox(self)
@@ -3584,6 +3632,12 @@ class MultiFolderSelector(QtWidgets.QDialog):
 
     def get_extract_metadata_option(self):
         return self.extract_metadata_checkbox.isChecked()
+
+
+    def get_multithreading_option(self):
+        return self.multithreading_checkbox.isChecked()
+
+
 
     def get_max_length(self):
         """Return the max sentence length as an integer, or 200 if invalid."""
@@ -3829,14 +3883,14 @@ if __name__ == "__main__":
     create_preset_parser.add_argument("-output_option", default="Single output", help="Output option")
     create_preset_parser.add_argument("-get_metadata", type=lambda x: x.lower() == "true", default=True, help="Extract metadata (True/False)")
     create_preset_parser.add_argument("-max_length", type=int, default=200, help="Maximum sentence length")
-    create_preset_parser.add_argument("-output_folder", default=, help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
+    create_preset_parser.add_argument("-output_folder", help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
 
     # Subparser for "start_session_from_files"
     session_parser = subparsers.add_parser("start_session_from_files", help="Start session from files")
     session_parser.add_argument("-sentence_preset_path", required=True, help="Path to the sentence preset file")
     session_parser.add_argument("-session_preset_path", required=True, help="Path to the session preset file")
     session_parser.add_argument("-randomize_settings", type=lambda x: x.lower() == "true", default=True, help="Randomize settings (True/False)")
-    session_parser.add_argument("-clipboard_settings", type=lambda x: x.lower() == "true", default=False, help="Clipboard settings (True/False)")
+    session_parser.add_argument("-autocopy_settings", type=lambda x: x.lower() == "true", default=False, help="Clipboard settings (True/False)")
 
     # Parse arguments
     args = parser.parse_args()
@@ -3862,7 +3916,7 @@ if __name__ == "__main__":
             sentence_preset_path=args.sentence_preset_path,
             session_preset_path=args.session_preset_path,
             randomize_settings=args.randomize_settings,
-            clipboard_settings=args.clipboard_settings,
+            autocopy_settings=args.autocopy_settings,
         )
         sys.exit(app.exec_())
 

@@ -1434,7 +1434,7 @@
          </widget>
         </item>
         <item row="0" column="2">
-         <widget class="QCheckBox" name="clipboard_toggle">
+         <widget class="QCheckBox" name="autocopy_toggle">
           <property name="maximumSize">
            <size>
             <width>100</width>
@@ -1451,7 +1451,7 @@
            <string>&lt;p style=&quot;color:black&quot;&gt; Automatically copy sentences to clipboard if selected.&lt;/p&gt;</string>
           </property>
           <property name="text">
-           <string>Clipboard</string>
+           <string>Autocopy</string>
           </property>
          </widget>
         </item>
