@@ -83,7 +83,7 @@
 
 
     "text_display": {
-        "QWidget": "color: rgb(40, 40, 40);background: rgb(200, 200, 200);padding: 0 30px;border: none",
+        "QWidget": "color: rgb(40, 40, 40);background: rgb(240, 240, 240);padding: 0 30px;border: none",
         "text_color": "rgb(40, 40, 40)",
         "highlight_color_1": "rgb(146,130,49)",
         "highlight_color_2": "rgb(146,130,49)",
@@ -96,12 +96,12 @@
         "highlight_color_9": "rgb(207, 134, 32)",
         "always_on_top_border": "rgb(0, 0, 0);",
         "metadata_font_size": 10,
-        "metadata_background": "rgb(200,200,200)",
+        "metadata_background": "rgb(240,240,240)",
         "metadata_color": "rgb(80,80,80)",
         "metadata_padding": "0 5 2 0"
     },
     "lineEdit": {
-        "QWidget": "color: rgb(20, 20, 20);background: rgb(200, 200, 200);padding: 0 30px; border: 2px solid rgb(110, 110, 110);selection-background-color: rgb(100, 100, 100);"
+        "QWidget": "color: rgb(20, 20, 20);background: rgb(220, 220, 220);padding: 0 30px; border: 2px solid rgb(110, 110, 110);selection-background-color: rgb(100, 100, 100);"
     },
     "session_buttons": {
         "QPushButton": "background: rgb(200, 200, 200); color: black;"

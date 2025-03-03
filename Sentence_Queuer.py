@@ -645,7 +645,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 highlight_keywords = dialog.get_highlight_keywords_option()
                 output_option = dialog.get_output_option()
                 metadata_settings = dialog.get_extract_metadata_option()
-                multithreading_settings = dialog.get_multithreading_option()
+                #multithreading_settings = dialog.get_multithreading_option()
                 preset_name = dialog.get_preset_name()
                 max_length = dialog.get_max_length()
 
@@ -2381,38 +2381,45 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
 
-
     def copy_sentence(self, rich_text=True):
         """Copy the current sentence to the clipboard, with or without rich text."""
         # Parse the current sentence entry
         current_sentence, _ = self.parse_sentence_entry(self.playlist[self.playlist_position])
-
+        
         # Function to replace curly braces with appropriate highlighted spans
         def replace_with_color(match):
             curly_count = match.group(0).count('{')
             color_key = f"highlight_color_{curly_count}"
             color_style = self.color_settings.get(color_key, self.color_settings["highlight_color_1"])
             return rf'<span style="color:{color_style}">{match.group(1)}</span>'
-
+        
         if rich_text:
             text_color = self.color_settings.get('text_color', 'rgb(0, 255, 255)')
             highlighted_sentence = re.sub(r'\{+(\w+?)\}+', replace_with_color, current_sentence)
             highlighted_sentence = rf'<span style="color:{text_color}">{highlighted_sentence}</span>'
-
+            
+            # Add two empty lines to the HTML version
+            highlighted_sentence_with_lines = f"{highlighted_sentence}<br><br><br>"
+            
             clipboard = QApplication.clipboard()
             mime_data = QtCore.QMimeData()
-            mime_data.setData('text/html', highlighted_sentence.encode('utf-8'))
+            mime_data.setData('text/html', highlighted_sentence_with_lines.encode('utf-8'))
             
             plain_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
-            mime_data.setText(plain_text)
+            # Add two empty lines to the plain text version
+            plain_text_with_lines = f"{plain_text}\n\n\n"
+            mime_data.setText(plain_text_with_lines)
             
             clipboard.setMimeData(mime_data)
-            print(f"Copied Rich Text (HTML): {highlighted_sentence}")
+            print(f"Copied Rich Text (HTML): {highlighted_sentence_with_lines}")
         else:
             clipboard_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
+            # Add two empty lines to the plain text
+            clipboard_text_with_lines = f"{clipboard_text}\n\n\n"
+            
             clipboard = QApplication.clipboard()
-            clipboard.setText(clipboard_text)
-            print(f"Copied Plain Text: {clipboard_text}")
+            clipboard.setText(clipboard_text_with_lines)
+            print(f"Copied Plain Text: {clipboard_text_with_lines}")
 
 
     def toggle_autocopy(self):
