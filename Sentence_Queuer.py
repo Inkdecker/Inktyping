@@ -86,6 +86,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
+
         # Use the executable's directory for absolute paths
         if getattr(sys, 'frozen', False):  # Check if the application is frozen (compiled as an EXE)
             self.base_dir = os.path.dirname(sys.executable)
@@ -154,6 +155,18 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.table_sentences_selection.setItem(0, 0, QTableWidgetItem('112'))
 
+        # Enable sorting on table headers
+        self.table_sentences_selection.setSortingEnabled(True)
+        self.table_session_selection.setSortingEnabled(True)
+
+
+        # Alternative method (ensures interactivity)
+        self.table_sentences_selection.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        self.table_session_selection.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+
+
+  
+
 
         self.load_presets()
 
@@ -187,8 +200,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.oldPos = self.pos()
         self.init_styles()
 
-        
-        
+    
+
+
     def init_message_boxes(self):
         """Initialize custom message box settings."""
         self.message_box = QtWidgets.QMessageBox(self)
@@ -413,10 +427,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                             dialog.setStyleSheet(style_sheet)
 
                         elif dialog_color and element_name == "ColorPickerDialog":
+                            print(element_styles.items())
                             # Apply styles specifically to ColorPickerDialog
                             style_sheet = ""
                             for selector, style in element_styles.items():
                                 style_sheet += f"{selector} {{{style}}}\n"
+
                             dialog_color.setStyleSheet(style_sheet)
 
 
@@ -584,12 +600,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Prevent column resizing for table_sentences_selection
         header_images = self.table_sentences_selection.horizontalHeader()
         header_images.setSectionResizeMode(QHeaderView.Fixed)
-        header_images.setSectionsClickable(False)  # Make header non-clickable
+        header_images.setSectionsClickable(True)  # Make header non-clickable
 
         # Prevent column resizing for table_session_selection
         header_session = self.table_session_selection.horizontalHeader()
         header_session.setSectionResizeMode(QHeaderView.Fixed)
-        header_session.setSectionsClickable(False)  # Make header non-clickable
+        header_session.setSectionsClickable(True)  # Make header non-clickable
 
         # Ensure the selection behavior is correctly set after applying styles
         self.table_session_selection.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -2915,6 +2931,10 @@ class SessionDisplay(QWidget, Ui_session_display):
             # Reapply the updated styles to the displayed sentence
             self.display_sentence()
 
+        #view.init_styles(session_display=session_display)
+        view.init_styles(session=view.display)
+        self.apply_text_settings()
+
 
 
 
@@ -3318,39 +3338,92 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.time_seconds = int(self.schedule[self.entry['current']][2])
         self.update_timer_display()
 
-
-
 class ColorPickerDialog(QDialog):
-    def __init__(self, parent, theme_file_path, color_settings):
+    def __init__(self, parent=None, color_settings=None, theme_file_path=None):
         super().__init__(parent)
-        self.setWindowTitle("Select Colors")
-        self.theme_file_path = theme_file_path
-        self.color_settings = color_settings  # Use color_settings instead of self.colors
-
-        # Remove the question mark by adjusting window flags
+        self.setWindowTitle("Pick Colors")
+        # Remove the question mark from the title bar
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-
-        # Set the window size and make it impossible to resize
-        self.setFixedSize(300, 350)  # Set a fixed width and height for the dialog
-
-        # Layout for dialog
+        # Set a wider window width
+        self.resize(400, self.height())
+        
         self.layout = QVBoxLayout()
-
-        # Create a color section for the text color
-        self.create_text_color_section()
-
-        # Create highlight color section
-        self.create_highlight_color_section()
-
-        # Save button
-        self.save_button = QPushButton("Save Colors")
-        self.save_button.clicked.connect(self.save_colors)
-        self.layout.addWidget(self.save_button)
-
         self.setLayout(self.layout)
 
-        self.load_colors()
+        self.color_settings = color_settings or {}
+        self.theme_file_path = theme_file_path  # Store the theme file path
 
+        # Load theme data if theme file path is provided
+        if self.theme_file_path:
+            self.load_colors()
+
+        # Text color section - now first in the layout
+        self.create_text_color_section()
+        
+        # Background Color Picker - now second in the layout, right after text color
+        self.bg_label = QLabel("Background Color")
+        self.bg_label.setAlignment(Qt.AlignCenter)
+        self.bg_label.setStyleSheet("padding: 5px;")
+        
+        self.bg_button = QPushButton()
+        self.bg_button.setFixedSize(35, 35)
+        self.bg_button.clicked.connect(self.pick_background_color)
+
+        # Set initial background color from theme
+        bg_color_str = self.color_settings.get("background", "rgb(240, 240, 240)")
+        self.bg_color = self.parse_rgb_color(bg_color_str)
+        self.update_bg_button()
+        
+        # Add background color widgets to main layout immediately after text color
+        self.layout.addWidget(self.bg_label)
+        self.layout.addWidget(self.bg_button, alignment=Qt.AlignCenter)
+        
+        # Highlight color section - now third in the layout
+        self.create_highlight_color_section()
+
+        # Save Button
+        self.save_button = QPushButton("Save colors")
+        self.save_button.clicked.connect(self.save_colors)
+        self.layout.addWidget(self.save_button)
+    
+    def extract_background_color(self):
+        """Extract background color from QWidget style in theme file."""
+        try:
+            with open(self.theme_file_path, "r") as file:
+                theme_data = json.load(file)
+            
+            qwidget_style = theme_data["text_display"].get("QWidget", "")
+            
+            # Extract background color from style string
+            if "background:" in qwidget_style:
+                bg_parts = qwidget_style.split("background:")[1].split(";")[0].strip()
+                return bg_parts
+            return "rgb(240, 240, 240)"  # Default value
+        except Exception as e:
+            print(f"Error extracting background color: {e}")
+            return "rgb(240, 240, 240)"  # Default value
+    
+    def parse_rgb_color(self, rgb_str):
+        """Convert an RGB string like 'rgb(240, 240, 240)' to a QColor object."""
+        try:
+            rgb_values = [int(x.strip()) for x in rgb_str.replace("rgb(", "").replace(")", "").split(',')]
+            return QColor(rgb_values[0], rgb_values[1], rgb_values[2])
+        except Exception as e:
+            print(f"Error parsing RGB color '{rgb_str}': {e}")
+            return QColor(240, 240, 240)  # Default color on parsing error
+
+    def pick_background_color(self):
+        color = QColorDialog.getColor(self.bg_color, self)
+        if color.isValid():
+            self.bg_color = color
+            self.update_bg_button()
+            # Format the new background color in RGB format
+            bg_rgb = f"rgb({self.bg_color.red()}, {self.bg_color.green()}, {self.bg_color.blue()})"
+            # Save to color_settings for persistence
+            self.color_settings["background"] = bg_rgb
+
+    def update_bg_button(self):
+        self.bg_button.setStyleSheet(f"background-color: {self.bg_color.name()};")
 
     def create_text_color_section(self):
         """Create an improved text color selection section."""
@@ -3364,8 +3437,13 @@ class ColorPickerDialog(QDialog):
 
         # Text color button with enhanced appearance
         text_color_button = QPushButton()
+        text_color_button.setObjectName("text_color_button")  # Set object name for findChild
         text_color_button.setFixedSize(35, 35)  # Slightly larger button for better usability
-        text_color_button.setStyleSheet("background-color: lightgray;")
+        
+        # Get initial text color
+        text_color_str = self.color_settings.get("text_color", "rgb(238, 238, 238)")
+        text_color_button.setStyleSheet(f"background-color: {text_color_str}; border: none;")
+        
         text_color_button.clicked.connect(lambda: self.pick_color("text_color", text_color_button))
 
         # Add widgets to layout
@@ -3377,15 +3455,19 @@ class ColorPickerDialog(QDialog):
 
     def get_text_color_based_on_background(self, background_color):
         """Determine whether the text color should be black or white based on the background color's brightness."""
-        # Extract RGB values from the background color (assumes the format is 'rgb(r, g, b)')
-        rgb_values = [int(x) for x in background_color[4:-1].split(',')]
-        r, g, b = rgb_values
+        try:
+            # Extract RGB values from the background color (assumes the format is 'rgb(r, g, b)')
+            rgb_values = [int(x.strip()) for x in background_color[4:-1].split(',')]
+            r, g, b = rgb_values
 
-        # Calculate luminance using the formula
-        luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            # Calculate luminance using the formula
+            luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
 
-        # If luminance is greater than a certain threshold, use black text, else use white text
-        return "black" if luminance > 128 else "white"
+            # If luminance is greater than a certain threshold, use black text, else use white text
+            return "black" if luminance > 128 else "white"
+        except Exception as e:
+            print(f"Error calculating text color: {e}")
+            return "black"  # Default
 
     def create_highlight_color_section(self):
         """Create the highlight color section with buttons displayed in a grid."""
@@ -3408,14 +3490,14 @@ class ColorPickerDialog(QDialog):
             color_button.setObjectName(f"highlight_button_{i}")  # Set a unique object name
 
             # Get the button's background color
-            background_color = self.color_settings[highlight_key]
+            background_color = self.color_settings.get(highlight_key, f"rgb(146,130,49)")
 
             # Get the text color based on the background color's brightness
             text_color = self.get_text_color_based_on_background(background_color)
 
             # Set the button's style with dynamic text color
             color_button.setStyleSheet(f"background-color: {background_color}; border: none; color: {text_color};")
-            color_button.clicked.connect(lambda _, k=highlight_key, btn=color_button: self.pick_color(k, btn))
+            color_button.clicked.connect(lambda checked, k=highlight_key, btn=color_button: self.pick_color(k, btn))
             grid_layout.addWidget(color_button, (i-1)//3, (i-1)%3)  # Arrange in 3x3 grid
 
         # Create a group box for the grid layout to group the buttons
@@ -3430,56 +3512,86 @@ class ColorPickerDialog(QDialog):
         # Add section layout to main layout
         self.layout.addLayout(section_layout)
 
-
-
-
     def pick_color(self, key, button):
         """Open color dialog to pick color for selected key and update the button background."""
-        # Parse the current color string into a QColor object
-        color_str = self.color_settings[key]
-        color_parts = [int(val) for val in color_str.replace("rgb(", "").replace(")", "").split(",")]
-        current_color = QColor(color_parts[0], color_parts[1], color_parts[2])
+        try:
+            # Parse the current color string into a QColor object
+            color_str = self.color_settings.get(key, "rgb(146,130,49)")
+            color_parts = [int(val.strip()) for val in color_str.replace("rgb(", "").replace(")", "").split(",")]
+            current_color = QColor(color_parts[0], color_parts[1], color_parts[2])
 
-        # Open color dialog to pick color and set the current color as the initial selection
-        new_color = QColorDialog.getColor(current_color, self, f"Pick a color for highlight {key[-1]}")
+            # Open color dialog to pick color and set the current color as the initial selection
+            new_color = QColorDialog.getColor(current_color, self, f"Pick a color for {key}")
 
-        if new_color.isValid():
-            # Update color in RGB format (not hex)
-            self.color_settings[key] = f"rgb({new_color.red()}, {new_color.green()}, {new_color.blue()})"
+            if new_color.isValid():
+                # Update color in RGB format (not hex)
+                self.color_settings[key] = f"rgb({new_color.red()}, {new_color.green()}, {new_color.blue()})"
 
-            # Get the appropriate text color based on luminance
-            text_color = self.get_text_color_based_on_background(self.color_settings[key])
+                # Get the appropriate text color based on luminance
+                text_color = self.get_text_color_based_on_background(self.color_settings[key])
 
-            # Update the background color of the clicked button
-            button.setStyleSheet(f"background-color: {self.color_settings[key]}; color: {text_color};")
-
-
-
+                # Update the background color of the clicked button
+                button.setStyleSheet(f"background-color: {self.color_settings[key]}; color: {text_color};")
+        except Exception as e:
+            print(f"Error picking color: {e}")
 
     def save_colors(self):
         """Save the selected colors into the theme file."""
         try:
             with open(self.theme_file_path, "r") as file:
                 theme_data = json.load(file)
-
-            # Save colors in RGB format
-            theme_data["text_display"].update({
-                "text_color": f"{self.color_settings['text_color']}",
-            })
+            
+            # Get the current QWidget style
+            qwidget_style = theme_data["text_display"].get("QWidget", "color: rgb(40, 40, 40);padding: 0 30px;border: none")
+            
+            # Format the new background color in RGB format
+            bg_rgb = f"rgb({self.bg_color.red()}, {self.bg_color.green()}, {self.bg_color.blue()})"
+            
+            # Update the background in the style string
+            if "background:" in qwidget_style:
+                # Split by "background:" and then by ";" to isolate the part we need to replace
+                before_bg = qwidget_style.split("background:")[0]
+                after_bg_parts = qwidget_style.split("background:")[1].split(";")
+                after_bg = ";" + ";".join(after_bg_parts[1:]) if len(after_bg_parts) > 1 else ""
+                
+                # Construct the new QWidget style
+                new_style = f"{before_bg}background: {bg_rgb}{after_bg}"
+                theme_data["text_display"]["QWidget"] = new_style
+            else:
+                # If background is not in the style, add it
+                theme_data["text_display"]["QWidget"] = qwidget_style + f";background: {bg_rgb}"
+            
+            # Update metadata_background to match the background color
+            theme_data["text_display"]["metadata_background"] = bg_rgb
+            
+            # Save text color if it exists in color_settings
+            if "text_color" in self.color_settings:
+                theme_data["text_display"]["text_color"] = self.color_settings["text_color"]
 
             # Save highlight colors
             for i in range(1, 10):
                 highlight_key = f"highlight_color_{i}"
-                theme_data["text_display"][highlight_key] = f"{self.color_settings[highlight_key]}"
+                if highlight_key in self.color_settings:
+                    theme_data["text_display"][highlight_key] = self.color_settings[highlight_key]
 
             # Save updated theme data to the file
             with open(self.theme_file_path, "w") as file:
                 json.dump(theme_data, file, indent=4)
 
-            # After saving, update the color settings in the parent class
-            self.parent().color_settings = self.color_settings  # Update the parent color settings
-
+            # Debug output
+            print(f"Background color saved: {bg_rgb}")
+            print(f"Metadata background updated to match background: {bg_rgb}")
+            print(f"QWidget style saved: {theme_data['text_display']['QWidget']}")
+            
+            # Update parent's color settings if parent exists
+            if self.parent():
+                if not hasattr(self.parent(), 'color_settings'):
+                    self.parent().color_settings = {}
+                self.parent().color_settings = self.color_settings.copy()
+                print("Updated parent's color settings")
+            
             self.accept()  # Close dialog after saving
+            
         except Exception as e:
             print(f"Error saving colors: {e}")
 
@@ -3488,31 +3600,45 @@ class ColorPickerDialog(QDialog):
         try:
             with open(self.theme_file_path, "r") as file:
                 theme_data = json.load(file)
-
+            
+            # Initialize color_settings if it doesn't exist
+            if not self.color_settings:
+                self.color_settings = {}
+            
+            # Load QWidget style and extract background
+            qwidget_style = theme_data["text_display"].get("QWidget", "")
+            self.color_settings["QWidget"] = qwidget_style
+            
+            # Extract background color from QWidget style
+            if "background:" in qwidget_style:
+                bg_parts = qwidget_style.split("background:")[1].split(";")[0].strip()
+                self.color_settings["background"] = bg_parts
+                print(f"Loaded background color: {bg_parts}")
+            else:
+                self.color_settings["background"] = "rgb(240, 240, 240)"
+                print("No background color found in QWidget style, using default")
+            
             # Load text color
-            self.color_settings["text_color"] = theme_data["text_display"].get("text_color", self.color_settings["text_color"]).split(":")[-1].strip()
+            self.color_settings["text_color"] = theme_data["text_display"].get("text_color", "rgb(238, 238, 238)")
+            print(f"Loaded text color: {self.color_settings['text_color']}")
 
-            # Find and update the text color button
-            text_color_button = self.findChild(QPushButton)
-            if text_color_button:
-                background_color = self.color_settings["text_color"]
-                text_color = self.get_text_color_based_on_background(background_color)
-                text_color_button.setStyleSheet(f"background-color: {background_color}; border: none; color: {text_color};")
-
-            # Load highlight colors and update buttons
+            # Load highlight colors
             for i in range(1, 10):
                 highlight_key = f"highlight_color_{i}"
-                self.color_settings[highlight_key] = theme_data["text_display"].get(highlight_key, self.color_settings[highlight_key]).split(":")[-1].strip()
+                self.color_settings[highlight_key] = theme_data["text_display"].get(highlight_key, "rgb(146,130,49)")
 
-                # Find the button for the highlight color and update its color
-                color_button = self.findChild(QPushButton, f"highlight_button_{i}")
-                if color_button:
-                    background_color = self.color_settings[highlight_key]
-                    text_color = self.get_text_color_based_on_background(background_color)
-                    color_button.setStyleSheet(f"background-color: {background_color}; border: none; color: {text_color};")
-
-        except (FileNotFoundError, json.JSONDecodeError) as e:
+            # No need to update buttons here as they'll be created after this method is called
+            
+        except Exception as e:
             print(f"Error loading theme: {e}")
+            # Set default values if file not found
+            self.color_settings = {
+                "background": "rgb(240, 240, 240)",
+                "text_color": "rgb(238, 238, 238)"
+            }
+            # Set default highlight colors
+            for i in range(1, 10):
+                self.color_settings[f"highlight_color_{i}"] = "rgb(146,130,49)"
 
 class MaxLengthDelegate(QStyledItemDelegate):
     def __init__(self, max_length=60, parent=None):
