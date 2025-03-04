@@ -1,10 +1,10 @@
 {
-    "selected_sentence_row": 11,
-    "selected_session_row": 0,
+    "selected_sentence_row": 18,
+    "selected_session_row": 2,
     "randomize_settings": false,
-    "auto_start_settings": true,
+    "auto_start_settings": false,
     "autocopy_settings": false,
-    "theme_settings": "default_theme.txt",
+    "theme_settings": "light_theme.txt",
     "shortcuts": {
         "main_window": {
             "start": "S",
