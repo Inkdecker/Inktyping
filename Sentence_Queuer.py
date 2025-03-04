@@ -2238,17 +2238,9 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
         # Initialize text settings dictionary with default values
-        self.text_display_settings = {
-            "font_size": 16,
-            "font_family": "Arial",
-            "font_weight": QtGui.QFont.Normal,
-            "font_color": "black",
-            "font_size_lineedit": 30,
-            "max_length_lineedit": 500,
-        }
 
-
-
+        self.load_text_display_settings()
+        self.apply_lineedit_styles()
         # Init color settings
         self.color_settings = {}
 
@@ -2296,6 +2288,64 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         self.toggle_autocopy()
 
+
+    # Method to load settings from the theme file
+    def load_text_display_settings(self):
+        # Construct the path to the theme file
+        theme_file_path = os.path.join(self.default_themes_dir, self.current_theme)
+
+        # Check if the theme file exists
+        if not os.path.exists(theme_file_path):
+            print(f"Theme file '{theme_file_path}' not found.")
+            return
+
+        # Load the theme data (assuming it's a JSON file)
+        try:
+            with open(theme_file_path, 'r', encoding='utf-8') as theme_file:
+                theme_data = json.load(theme_file)
+        except Exception as e:
+            print(f"Error loading theme file: {e}")
+            return
+
+        # Retrieve text display settings from the theme data
+        text_display = theme_data.get('text_display', {})
+
+        # Initialize text settings with values from the theme or defaults
+        self.text_display_settings = {
+            "font_size": text_display.get("font_size", 16),
+            "font_family": text_display.get("font_family", "Arial"),
+            "font_weight": text_display.get("font_weight", 50),
+            "font_color": text_display.get("font_color", "black"),
+            "font_size_lineedit": text_display.get("font_size_lineedit", 8),
+            "font_family_lineedit": text_display.get("font_family_lineedit", "Arial"),
+            "font_weight_lineedit": text_display.get("font_weight_lineedit", 50),
+            "font_color_lineedit": text_display.get("font_color_lineedit", "black"),
+            "max_length_lineedit": text_display.get("max_length_lineedit", 500),
+        }
+
+        # Optionally, you can check for other settings (highlight colors, metadata settings) if needed
+        print("Text display settings loaded from theme:")
+        print(self.text_display_settings)
+
+
+    def apply_lineedit_styles(self):
+        """
+        Applies font settings and color to the lineEdit field based on the loaded theme.
+        """
+        # Apply font family, weight, and size
+        line_edit_font = self.lineEdit.font()
+        line_edit_font.setFamily(self.text_display_settings["font_family_lineedit"])
+        line_edit_font.setWeight(self.text_display_settings["font_weight_lineedit"])
+        line_edit_font.setPointSize(self.text_display_settings["font_size_lineedit"])
+
+        # Apply font color
+        line_edit_color = self.text_display_settings["font_color_lineedit"]
+        self.lineEdit.setStyleSheet(f"color: {line_edit_color};")
+
+        # Set the font for the lineEdit
+        self.lineEdit.setFont(line_edit_font)
+        
+        # You can also adjust any other lineEdit properties as needed
 
 
 
@@ -2478,7 +2528,6 @@ class SessionDisplay(QWidget, Ui_session_display):
         """
         return ''.join(c for c in name if c.isalnum() or c in (' ', '_', '-')).rstrip()
 
-
     def remove_sentence(self):
         if not os.path.exists(self.file_path):
             print("File path does not exist.")
@@ -2492,9 +2541,15 @@ class SessionDisplay(QWidget, Ui_session_display):
         # Format the search string with properly escaped quotes
         search_string = f"\"\"\"{current_sentence}\"\"\""
 
-        # Read the file content
-        with open(self.file_path, 'r') as file:
-            file_lines = file.readlines()
+        try:
+            # Read the file content with proper encoding (utf-8 or other)
+            with open(self.file_path, 'r', encoding='utf-8') as file:
+                file_lines = file.readlines()
+        except UnicodeDecodeError:
+            # Handle the error if the file isn't encoded in utf-8
+            print("Error: Unable to read the file with UTF-8 encoding. Trying a different encoding...")
+            with open(self.file_path, 'r', encoding='cp1252') as file:
+                file_lines = file.readlines()
 
         # Find and remove the exact line and the line beneath it (if empty)
         line_found = None
@@ -2520,7 +2575,7 @@ class SessionDisplay(QWidget, Ui_session_display):
             return
 
         # Write updated lines back to the file
-        with open(self.file_path, 'w') as file:
+        with open(self.file_path, 'w', encoding='utf-8') as file:
             file.writelines(updated_lines)
 
         # Remove the current sentence from the playlist
@@ -2535,13 +2590,12 @@ class SessionDisplay(QWidget, Ui_session_display):
         current_file_dir = os.path.dirname(self.file_path)
         new_file_path = os.path.join(current_file_dir, unique_filename)
 
-        with open(new_file_path, 'w') as new_file:
+        with open(new_file_path, 'w', encoding='utf-8') as new_file:
             new_file.write(f"{line_found}\n")
 
         send2trash(new_file_path)
         self.load_next_sentence()
         print(f"Sentence removed: '{current_sentence}' and saved to: '{new_file_path}' (sent to recycle bin)")
-
 
 
     def show_main_window(self):
@@ -2939,112 +2993,83 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
 
-
     def zoom_plus(self):
         """
-        Increases the size of the session_display window and the font size within limits.
-        Limits the maximum size of the window and font size.
+        Increases the size of the session_display window, slightly increases the height of self.lineEdit,
+        and also increases the font size, but within zoom limits.
         """
         current_size = self.size()
-        max_size = QtCore.QSize(1600, 1200)  # Set your desired maximum window size
+        max_size = QtCore.QSize(1600, 1200)  # Maximum window size
+        current_font_size = self.text_display_settings["font_size_lineedit"]
 
-        # Increase the size of the window
-        new_width = current_size.width() + 100
-        new_height = current_size.height() + 75
+        # Increase window size if below the maximum limit
+        if current_size.width() < max_size.width() and current_size.height() < max_size.height():
+            new_width = min(current_size.width() + 100, max_size.width())
+            new_height = min(current_size.height() + 75, max_size.height())
+            self.resize(new_width, new_height)
 
-        # Ensure the window does not exceed the maximum size
-        if new_width > max_size.width():
-            new_width = max_size.width()
-        if new_height > max_size.height():
-            new_height = max_size.height()
+            # Increase lineEdit height
+            line_edit_size = self.lineEdit.size()
+            new_line_edit_height = min(line_edit_size.height() + 5, 50)  # Set a reasonable max height
+            self.lineEdit.setFixedHeight(new_line_edit_height)
 
-        # Resize the window
-        self.resize(new_width, new_height)
+            # Increase font size to match the lineEdit height (within limits)
+            new_font_size = min(current_font_size + 1, 18)  # Slight increase in font size, max 18
+            self.text_display_settings["font_size_lineedit"] = new_font_size
 
-        # Increase the font size with limits
-        max_font_size = 30  # Set your desired maximum font size
-        current_font_size = self.text_display_settings["font_size"]
-        new_font_size = current_font_size + 2  # Increase font size by 2
-
-        if new_font_size > max_font_size:
-            new_font_size = max_font_size  # Cap the font size at the maximum limit
-
-        # Update text_display_settings
-        self.text_display_settings["font_size"] = new_font_size  # Update the font size
-
-        # Update the font size for self.lineEdit
-        line_edit_font = self.lineEdit.font()  # Get current font
-        line_edit_font.setPointSize(new_font_size)  # Set new font size
-        self.lineEdit.setFont(line_edit_font)  # Apply the new font size
-
-        # Update font size for QLineEdit
-        line_edit_size = self.text_display_settings["font_size_lineedit"]
-        new_line_edit_font_size = line_edit_size + 1  # Increase line edit font size by 1
-
-        # Set a maximum font size for line edit if necessary
-        max_line_edit_font_size = 16  # Example maximum size
-        if new_line_edit_font_size > max_line_edit_font_size:
-            new_line_edit_font_size = max_line_edit_font_size
-
-        self.text_display_settings["font_size_lineedit"] = new_line_edit_font_size  # Update the font size for QLineEdit
-        line_edit_font.setPointSize(new_line_edit_font_size)  # Update the font size for QLineEdit
-        self.lineEdit.setFont(line_edit_font)  # Apply the new font size
-
-        self.apply_text_settings()  # Apply the updated settings
+            # Update the font size for self.lineEdit
+            line_edit_font = self.lineEdit.font()
+            line_edit_font.setPointSize(new_font_size)  # Set new font size
+            self.lineEdit.setFont(line_edit_font)
 
 
     def zoom_minus(self):
         """
-        Decreases the size of the session_display window and the font size within limits.
-        Limits the minimum size of the window and font size.
+        Decreases the size of the session_display window, slightly decreases the height of self.lineEdit,
+        and also decreases the font size, but within zoom limits.
         """
         current_size = self.size()
-        min_size = QtCore.QSize(440, 200)  # Set your desired minimum window size
+        min_size = QtCore.QSize(440, 200)  # Minimum window size
+        current_font_size = self.text_display_settings["font_size_lineedit"]
 
-        # Decrease the size of the window
-        new_width = current_size.width() - 100
-        new_height = current_size.height() - 75
+        # Decrease window size if above the minimum limit
+        if current_size.width() > min_size.width() and current_size.height() > min_size.height():
+            new_width = max(current_size.width() - 100, min_size.width())
+            new_height = max(current_size.height() - 75, min_size.height())
+            self.resize(new_width, new_height)
 
-        # Ensure the window does not go below the minimum size
-        if new_width < min_size.width():
-            new_width = min_size.width()
-        if new_height < min_size.height():
-            new_height = min_size.height()
+            # Decrease lineEdit height
+            line_edit_size = self.lineEdit.size()
+            new_line_edit_height = max(line_edit_size.height() - 5, 20)  # Set a reasonable min height
+            self.lineEdit.setFixedHeight(new_line_edit_height)
 
-        # Resize the window
-        self.resize(new_width, new_height)
+            # Decrease font size to match the lineEdit height (within limits)
+            new_font_size = max(current_font_size - 1, 10)  # Slight decrease in font size, min 10
+            self.text_display_settings["font_size_lineedit"] = new_font_size
 
-        # Decrease the font size with limits
-        min_font_size = 10  # Set your desired minimum font size
-        current_font_size = self.text_display_settings["font_size"]
-        new_font_size = current_font_size - 2  # Decrease font size by 2
-
-        if new_font_size < min_font_size:
-            new_font_size = min_font_size  # Cap the font size at the minimum limit
-
-        # Update text_display_settings
-        self.text_display_settings["font_size"] = new_font_size  # Update the font size
-
-        # Update the font size for self.lineEdit
-        line_edit_font = self.lineEdit.font()  # Get current font
-        line_edit_font.setPointSize(new_font_size)  # Set new font size
-        self.lineEdit.setFont(line_edit_font)  # Apply the new font size
-
-        # Update font size for QLineEdit
-        line_edit_font_size = self.text_display_settings["font_size_lineedit"]
-        new_line_edit_font_size = line_edit_font_size - 1  # Decrease line edit font size by 1
-
-        # Set a minimum font size for line edit if necessary
-        if new_line_edit_font_size < 8:  # Example minimum size
-            new_line_edit_font_size = 8
-
-        self.text_display_settings["font_size_lineedit"] = new_line_edit_font_size  # Update the font size for QLineEdit
-        line_edit_font.setPointSize(new_line_edit_font_size)  # Update the font size for QLineEdit
-        self.lineEdit.setFont(line_edit_font)  # Apply the new font size
-
-        self.apply_text_settings()  # Apply the updated settings
+            # Update the font size for self.lineEdit
+            line_edit_font = self.lineEdit.font()
+            line_edit_font.setPointSize(new_font_size)  # Set new font size
+            self.lineEdit.setFont(line_edit_font)
 
 
+    def reset_zoom(self):
+        """
+        Resets the window and font size to the default size.
+        """
+        default_size = QtCore.QSize(800, 600)  # Set your default window size
+        self.resize(default_size)
+
+        # Reset lineEdit height to default
+        self.lineEdit.setFixedHeight(30)  # Set your default height
+
+        # Reset font size to default
+        default_font_size = 12  # Set your default font size
+        self.text_display_settings["font_size_lineedit"] = default_font_size
+
+        line_edit_font = self.lineEdit.font()
+        line_edit_font.setPointSize(default_font_size)  # Set default font size
+        self.lineEdit.setFont(line_edit_font)
 
 
 
