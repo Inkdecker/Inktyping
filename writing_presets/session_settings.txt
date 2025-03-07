@@ -1,7 +1,7 @@
 {
-    "selected_sentence_row": 4,
-    "selected_session_row": 0,
-    "randomize_settings": false,
+    "selected_sentence_row": 23,
+    "selected_session_row": 1,
+    "randomize_settings": true,
     "auto_start_settings": true,
     "autocopy_settings": false,
     "theme_settings": "light_theme.txt",
