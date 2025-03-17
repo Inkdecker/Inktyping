@@ -1,6 +1,16 @@
-<p align="center">
-  <img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample.png" alt="Project Screenshot" width="600"/>
-</p>
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(1).png" alt="Screenshot 1" width="300"/></td>
+      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(2).png" alt="Screenshot 2" width="300"/></td>
+    </tr>
+    <tr>
+      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(3).png" alt="Screenshot 3" width="300"/></td>
+      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(4).png" alt="Screenshot 4" width="300"/></td>
+    </tr>
+  </table>
+</div>
+
 
 # <img src="https://raw.githubusercontent.com/Inkdecker/session_writing/refs/heads/main/ui/resources/icons/session_writing.png" width="25" style="vertical-align: middle;" /> Session Writing
 
