@@ -2837,7 +2837,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         metadata_font.setPointSize(self.color_settings['metadata_font_size'])
         metadata_font.setFamily(self.text_display_settings.get("font_family", "Arial"))
         self.metadata_label.setFont(metadata_font)
-        self.metadata_label.setStyleSheet(f"color: {self.color_settings['metadata_color']};background: {self.color_settings['metadata_background']};padding: {self.color_settings['metadata_padding']};")
+        self.metadata_label.setStyleSheet(f"color: {self.color_settings['text_color']};background: {self.color_settings['metadata_background']};padding: {self.color_settings['metadata_padding']};")
 
          #self.text_display.setStyleSheet(f"color: {self.color_settings['text_color']};")
         # Get RGB values for font color and background color
