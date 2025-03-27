@@ -447,6 +447,9 @@
         </property>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="spacing">
+           <number>0</number>
+          </property>
           <property name="rightMargin">
            <number>253</number>
           </property>
@@ -534,10 +537,19 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <layout class="QGridLayout" name="gridLayout_4">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetNoConstraint</enum>
+        </property>
         <property name="topMargin">
          <number>0</number>
         </property>
-        <item row="0" column="1">
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item row="2" column="1">
          <widget class="QTableWidget" name="table_sentences_selection">
           <property name="enabled">
            <bool>true</bool>
@@ -551,13 +563,13 @@
           <property name="minimumSize">
            <size>
             <width>300</width>
-            <height>100</height>
+            <height>220</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
             <width>500</width>
-            <height>200</height>
+            <height>220</height>
            </size>
           </property>
           <property name="font">
@@ -653,6 +665,41 @@
            </property>
           </column>
          </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="search_preset">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>300</width>
+            <height>25</height>
+           </size>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>2</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </item>
@@ -1050,6 +1097,9 @@
     </item>
     <item>
      <layout class="QGridLayout" name="gridLayout">
+      <property name="topMargin">
+       <number>0</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="label_7">
         <property name="font">
@@ -1323,7 +1373,7 @@
       <property name="minimumSize">
        <size>
         <width>540</width>
-        <height>228</height>
+        <height>180</height>
        </size>
       </property>
       <property name="focusPolicy">

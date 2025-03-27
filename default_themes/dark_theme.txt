@@ -10,7 +10,7 @@
         "QTreeView": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);"
     },
     "table_sentences_selection, table_session_selection, table_images_selection": {
-        "QTableWidget": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);border: 1px solid rgb(60, 60, 60);",
+        "QTableWidget": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);border: 1px solid rgb(60, 60, 60);margin-top:5px",
         "QTableWidget::item:selected": "background-color: rgb(100, 100, 100); color: rgb(255, 255, 255);",
         "QTableWidget::item:selected:focus": "background-color: rgb(100, 100, 100); color: rgb(255, 255, 255);",
         "QHeaderView::section": "background-color: rgb(40, 40, 40); color: rgb(220, 220, 220); padding: 4px; border: none; font-weight: normal;",
@@ -18,6 +18,10 @@
         "QLineEdit": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(100, 100, 100);selection-background-color: rgb(153, 102, 51);",
         "QLineEdit:focus": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(100, 100, 100);selection-background-color: rgb(100, 100, 100);"
 
+    },
+    "search_preset": {
+        "QLineEdit": "background: rgb(40, 40, 40); color: rgb(40, 40, 40); border: 1px solid rgb(60, 60, 60);;selection-background-color: rgb(100, 100, 100)",
+        "QLineEdit:focus": "background: rgb(40, 40, 40); color: rgb(220, 220, 220); border: 1px solid rgb(100, 100, 100);selection-background-color: rgb(100, 100, 100);"
     },
     "message_box": {
         "QMessageBox": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);  ;",
