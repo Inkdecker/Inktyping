@@ -358,6 +358,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Theme selector button
         self.theme_options_button.clicked.connect(self.open_theme_selector)
 
+        # Preset search
+        self.search_preset.textChanged.connect(self.filter_presets)
+
 
 
 
@@ -628,6 +631,18 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         print("cache selected_sentence_row", selected_sentence_row)
         print("cache session_selection_cache", selected_preset_row)
+
+
+
+    def filter_presets(self):
+        """Filter table_sentences_selection based on search_preset input."""
+        search_text = self.search_preset.text().strip().lower()
+        
+        for row in range(self.table_sentences_selection.rowCount()):
+            item = self.table_sentences_selection.item(row, 0)  # Assuming filenames are in column 0
+            if item:
+                filename = item.text().lower()
+                self.table_sentences_selection.setRowHidden(row, search_text not in filename)
 
 
 
