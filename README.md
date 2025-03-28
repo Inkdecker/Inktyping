@@ -27,10 +27,11 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
 
-	- 04.12.2014: Ability to create Rainmeter profiles to export the slideshows
-	
-   	- (New) 30.12.2014 New: Main functions available from commande line and metadata extraction
+	- 04.12.2024: Ability to create Rainmeter profiles to export the slideshows
+   	- 30.12.2024: Main functions available from commande line and metadata extraction
     
+      	- (New) 28.03.2025 New: Search function for the sentence presets.
+     
 ##### Supported files :  .txt, .epub, .pdf
 
 
