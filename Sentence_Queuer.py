@@ -49,6 +49,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowTitle('Reference Practice')
         self.session_schedule = {}
+        # Install event filter
+        self.installEventFilter(self)
+        
+        # Disable tab focus for all widgets
+        for widget in self.findChildren(QtWidgets.QWidget):
+            widget.setFocusPolicy(QtCore.Qt.NoFocus)
+        
 
 
         # Define default shortcuts
@@ -68,8 +75,10 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 "next_sentence": "Right",
                 "open_folder": "O",
                 "copy_plain_text": "C",
+                "copy_plain_text_metadata": "Ctrl+Shift+C",
                 "copy_highlighted_text": "Ctrl+C",
-                "toggle_autocopy": "Shift+C",
+                "copy_highlighted_text_metadata": "Shift+C",
+                "toggle_autocopy": "F3",
                 "toggle_metadata": "F2",
                 "delete_sentence": "Ctrl+D",
                 "zoom_in": "Q",
@@ -645,8 +654,34 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.table_sentences_selection.setRowHidden(row, search_text not in filename)
 
 
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Tab:
+            # Custom Tab key handling
+            if self.search_preset.hasFocus():
+                # Clear focus from all widgets
+                focused_widget = QtWidgets.QApplication.focusWidget()
+                if focused_widget:
+                    focused_widget.clearFocus()
+                
+                # Explicitly clear focus for the entire window
+                self.clearFocus()
+            else:
+                # Set focus to search_preset
+                self.search_preset.setFocus()
+                self.search_preset.selectAll()
+            
+            # Prevent default Tab behavior
+            event.accept()
+            return
+        
+        # Call the parent class's keyPressEvent for other key events
+        super().keyPressEvent(event)
 
+    def eventFilter(self, obj, event):
+        # Optionally keep your existing event filter logic
+        return super().eventFilter(obj, event)
 
+    
 ########################################## TEXT PARSING ##########################################
 ########################################## TEXT PARSING ##########################################
 ########################################## TEXT PARSING ##########################################
@@ -1881,7 +1916,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def start_session_from_files(self, sentence_preset_path=None, session_preset_path=None, randomize_settings=True, autocopy_settings=False):
+    def start_session_from_files(self, sentence_preset_path=None, session_preset_path=None, randomize_settings=True):
         """
         Creates and runs SessionDisplay using information from the selected session and preset files.
         Handles both metadata and non-metadata sentence formats.
@@ -2028,7 +2063,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             schedule=self.session_schedule,
             items=selected_sentences,
             total=self.total_scheduled_sentences,
-            autocopy_settings=autocopy_settings,
+            autocopy_settings=self.autocopy_settings,
             themes_dir=self.theme_presets_dir,
             current_theme=self.current_theme
         )
@@ -2300,7 +2335,8 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.setMinimumSize(QtCore.QSize(550, 200))
         self.autocopy_settings = autocopy_settings
 
-        self.toggle_autocopy()
+        if autocopy_settings:
+            self.clipboard_button.setChecked(True)
 
 
     # Method to load settings from the theme file
@@ -2461,10 +2497,10 @@ class SessionDisplay(QWidget, Ui_session_display):
 
 
 
-    def copy_sentence(self, rich_text=True):
+    def copy_sentence(self, rich_text=True, metadata=False):
         """Copy the current sentence to the clipboard, with or without rich text."""
         # Parse the current sentence entry
-        current_sentence, _ = self.parse_sentence_entry(self.playlist[self.playlist_position])
+        current_sentence, sentence_metadata = self.parse_sentence_entry(self.playlist[self.playlist_position])
         
         # Function to replace curly braces with appropriate highlighted spans
         def replace_with_color(match):
@@ -2473,33 +2509,46 @@ class SessionDisplay(QWidget, Ui_session_display):
             color_style = self.color_settings.get(color_key, self.color_settings["highlight_color_1"])
             return rf'<span style="color:{color_style}">{match.group(1)}</span>'
         
+        if metadata:
+            metadata_text = f" - {sentence_metadata}" if sentence_metadata else ""
+        else:
+            metadata_text = ""
+        
         if rich_text:
             text_color = self.color_settings.get('text_color', 'rgb(0, 255, 255)')
             highlighted_sentence = re.sub(r'\{+(\w+?)\}+', replace_with_color, current_sentence)
             highlighted_sentence = rf'<span style="color:{text_color}">{highlighted_sentence}</span>'
             
+            # Add metadata if enabled
+            highlighted_sentence_with_metadata = f"{highlighted_sentence}{metadata_text}" if metadata else highlighted_sentence
+            
             # Add two empty lines to the HTML version
-            highlighted_sentence_with_lines = f"{highlighted_sentence}<br><br><br>"
+            highlighted_sentence_with_lines = f"{highlighted_sentence_with_metadata}<br><br><br>"
             
             clipboard = QApplication.clipboard()
             mime_data = QtCore.QMimeData()
             mime_data.setData('text/html', highlighted_sentence_with_lines.encode('utf-8'))
             
             plain_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
+            plain_text_with_metadata = f"{plain_text}{metadata_text}" if metadata else plain_text
+            
             # Add two empty lines to the plain text version
-            plain_text_with_lines = f"{plain_text}\n\n\n"
+            plain_text_with_lines = f"{plain_text_with_metadata}\n\n\n"
             mime_data.setText(plain_text_with_lines)
             
             clipboard.setMimeData(mime_data)
             print(f"Copied Rich Text (HTML): {highlighted_sentence_with_lines}")
         else:
             clipboard_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
+            clipboard_text_with_metadata = f"{clipboard_text}{metadata_text}" if metadata else clipboard_text
+            
             # Add two empty lines to the plain text
-            clipboard_text_with_lines = f"{clipboard_text}\n\n\n"
+            clipboard_text_with_lines = f"{clipboard_text_with_metadata}\n\n\n"
             
             clipboard = QApplication.clipboard()
             clipboard.setText(clipboard_text_with_lines)
             print(f"Copied Plain Text: {clipboard_text_with_lines}")
+
 
 
     def toggle_autocopy(self):
@@ -2694,7 +2743,12 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         # Preset path and folder
         self.copy_sentence_button.clicked.connect(self.copy_sentence)
-        self.copy_sentence_button.setToolTip(f"[{self.shortcuts['session_window']['copy_highlighted_text']}] Copy sentence to clipboard")
+        self.copy_sentence_button.setToolTip(f"[{self.shortcuts['session_window']['copy_highlighted_text']}] Copy sentence to clipboard,\n[{self.shortcuts['session_window']['copy_highlighted_text_metadata']}] Copy sentence to clipboard with metadata,\n[{self.shortcuts['session_window']['copy_plain_text']}] Simple text copy,\n[{self.shortcuts['session_window']['copy_plain_text_metadata']}] Simple text copy with metadata")
+
+
+
+
+
 
         self.clipboard_button.clicked.connect(self.toggle_autocopy)
         self.clipboard_button.setToolTip(f"[{self.shortcuts['session_window']['toggle_autocopy']}] Automatically copy current sentence to clipboard")
@@ -2758,13 +2812,26 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.open_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["open_folder"]), self)
         self.open_key.activated.connect(self.open_text_folder)
 
-        # Shortcut for copying as rich text (Ctrl+C)
-        self.copy_rich_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_plain_text"]), self)
-        self.copy_rich_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=False))
-
         # Shortcut for copying as plain text (C)
-        self.copy_plain_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_highlighted_text"]), self)
-        self.copy_plain_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=True))
+        self.copy_plain_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_plain_text"]), self)
+        self.copy_plain_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=False))
+
+
+        # Shortcut for copying as plain text with metadata (Ctrl + Shift + C)
+        self.copy_plain_text_metadata_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_plain_text_metadata"]), self)
+        self.copy_plain_text_metadata_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=False,metadata=True))
+
+
+
+        # Shortcut for copying as rich text (Ctrl + C)
+        self.copy_rich_text_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_highlighted_text"]), self)
+        self.copy_rich_text_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=True))
+        
+        # Shortcut for copying as rich text with metadata (Shift + C)
+        self.copy_rich_text_metadata_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["copy_highlighted_text_metadata"]), self)
+        self.copy_rich_text_metadata_shortcut.activated.connect(lambda: self.copy_sentence(rich_text=True,metadata=True))
+
+
 
         self.clipboard_key = QtWidgets.QShortcut(QtGui.QKeySequence(self.shortcuts["session_window"]["toggle_autocopy"]), self)
         self.clipboard_key.activated.connect(self.toggle_autocopy)
