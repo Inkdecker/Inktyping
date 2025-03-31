@@ -29,8 +29,9 @@ It can be used to either analyze text for research purposes or practice writing.
 
 	- 04.12.2024: Ability to create Rainmeter profiles to export the slideshows
    	- 30.12.2024: Main functions available from commande line and metadata extraction
-    
-      	- (New) 28.03.2025 New: Search function for the sentence presets.
+      	- 28.03.2025: Search function for the sentence presets.
+       
+        - (New) 31.03.2025 New: Added the use of keyword dictionaries as a new parsing method
      
 ##### Supported files :  .txt, .epub, .pdf
 
@@ -53,8 +54,6 @@ Prefix | Result
 **&Keyword** | search the given form [Keyword]
 **Keyword1 + Keyword2 + ...** | search for multiple keywords in a sentence, either forms
 **&Keyword1 + &Keyword2 + ...** | search for multiple keywords in a sentence, given forms
-**!Keyword** | ignore sentences with either singular or plural forms [ignore Keyword and Keywords]
-**!&Keyword** | ignore sentences with the given form [ignore Keyword]
 **#Keyword** | highlight the given form without searching it
 **;Comment** | ignore line 
 
@@ -93,7 +92,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
  
 ##### Example :
 ```batch
-session_writing.exe create_preset -folder_list "D:\Desktop\Book_Folder_1" "D:\Desktop\Book_Folder_2" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
+session_writing.exe create_preset -folder_list "D:\Desktop\Book1.epub" "D:\Desktop\Book2.epub" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
 ```
 ### Start session
 - **start_session_from_files**
