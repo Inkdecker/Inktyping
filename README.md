@@ -81,7 +81,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
 ## Command line
 ### Create preset
 - **create_preset**
-  - **`-folder_list` (required)**: Path(s) to the folder(s) containing text files
+  - **`-selected_files` (required)**: List of file paths of text files to process
   - **`-keyword_profiles` (required)**: Profiles in JSON format `{'Highlight color 1': [], 'Highlight color 2': [], 'Highlight color 3': [], 'Highlight color 4': [], 'Highlight color 5': [], 'Highlight color 6': [], 'Highlight color 7': [], 'Highlight color 8': [], 'Highlight color 9': []}`
   - **`-preset_name` (optional)**: Name of the preset |  *Default*: `"preset_output"`
   - **`-highlight_keywords` (optional)**: Highlight keywords (`True`/`False`) | *Default*: `True`
@@ -92,7 +92,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
  
 ##### Example :
 ```batch
-session_writing.exe create_preset -folder_list "D:\Desktop\Book1.epub" "D:\Desktop\Book2.epub" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
+session_writing.exe create_preset -selected_files "D:\Desktop\Book1.epub" "D:\Desktop\Book2.epub" -keyword_profiles "{\"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
 ```
 ### Start session
 - **start_session_from_files**
