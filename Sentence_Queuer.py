@@ -97,7 +97,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 "add_60_seconds": "Ctrl+Up",
                 "restart_timer": "Ctrl+Shift+Up"
             }
-        }
+        } 
 
 
 
