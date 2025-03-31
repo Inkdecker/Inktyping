@@ -4,4 +4,4 @@ send2trash
 EbookLib
 beautifulsoup4
 PyPDF2
-
+inflect

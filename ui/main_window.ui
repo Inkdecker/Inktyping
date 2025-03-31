@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>570</width>
-    <height>620</height>
+    <height>700</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>570</width>
-    <height>620</height>
+    <height>700</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>570</width>
-    <height>620</height>
+    <width>599</width>
+    <height>731</height>
    </size>
   </property>
   <property name="palette">
@@ -563,13 +563,13 @@
           <property name="minimumSize">
            <size>
             <width>300</width>
-            <height>220</height>
+            <height>300</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
             <width>500</width>
-            <height>220</height>
+            <height>300</height>
            </size>
           </property>
           <property name="font">
@@ -684,7 +684,7 @@
            </size>
           </property>
           <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
+           <enum>Qt::TabFocus</enum>
           </property>
          </widget>
         </item>
@@ -1070,7 +1070,7 @@
              <string notr="true">background: rgb(220,220,220); color: 'black';</string>
             </property>
             <property name="text">
-             <string>Add Folders</string>
+             <string>Create Preset</string>
             </property>
             <property name="iconSize">
              <size>
@@ -1374,6 +1374,12 @@
        <size>
         <width>540</width>
         <height>180</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>600</width>
+        <height>540</height>
        </size>
       </property>
       <property name="focusPolicy">

@@ -71,8 +71,38 @@
         "QTableWidget::item:selected": "background-color: rgb(100, 100, 100); color: rgb(255, 255, 255);",
         "QTableWidget::item:selected:focus": "background-color: rgb(100, 100, 100); color: rgb(255, 255, 255);",
         "QHeaderView::section": "background-color: rgb(40, 40, 40); color: rgb(220, 220, 220); padding: 4px; border: none; font-weight: normal;",
-        "QSplitter::handle ": "background: transparent; width: 0px;"
+        "QSplitter::handle ": "background: transparent; width: 0px;",
+
+        "QGroupBox": "color: rgb(220, 220, 220); border: 1px solid rgb(80, 80, 80); margin-top: 10px; padding-top: 15px; background: rgb(35, 35, 35);",
+        "QGroupBox::title": "subcontrol-origin: margin; left: 10px; padding: 0 3px; color: rgb(220, 220, 220);"
+
     },
+
+
+      "dictionary_controls": {
+        "checkbox": {
+          "QCheckBox": "color: #ffffff; background-color: transparent;"
+        },
+        "label": {
+          "QLabel": "color: #ffffff; background-color: transparent;"
+        },
+        "path_edit": {
+          "QLineEdit": "color: #ffffff; background-color: #333333; border: 1px solid #555555;"
+        },
+        "browse_button": {
+          "QPushButton": "color: #ffffff; background-color: #444444; border: 1px solid #666666;padding: 4px;",
+          "QPushButton:hover": "background-color: #555555;",
+          "QPushButton:pressed": "background-color: #222222;"
+        }
+      },
+      "dictionary_container": {
+        "QScrollArea": "background-color: #222222; border: 1px solid #333333;",
+        "QWidget": "background-color: #222222;"
+      },
+
+
+
+    
     "labels": {
         "QLabel": "color: rgb(220, 220, 220);"
     },

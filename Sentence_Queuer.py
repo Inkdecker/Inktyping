@@ -3,12 +3,16 @@ import sys
 import argparse
 import subprocess
 import random
-import concurrent.futures
-from functools import partial
 # Text stuff
 import re
+import inflect
+
 from ebooklib import epub, ITEM_DOCUMENT
 from bs4 import BeautifulSoup
+
+
+
+
 import PyPDF2
 import time
 from html import escape
@@ -52,11 +56,14 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Install event filter
         self.installEventFilter(self)
         
+        self.plural = inflect.engine()
+
+
+
         # Disable tab focus for all widgets
         for widget in self.findChildren(QtWidgets.QWidget):
-            widget.setFocusPolicy(QtCore.Qt.NoFocus)
+            widget.setFocusPolicy(QtCore.Qt.ClickFocus)
         
-
 
         # Define default shortcuts
         self.default_shortcuts = {
@@ -361,8 +368,28 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.auto_start_toggle.stateChanged.connect(self.update_auto_start_settings)
 
         # Table selection handlers
-        self.table_sentences_selection.itemChanged.connect(self.rename_presets)
-        self.table_session_selection.itemChanged.connect(self.rename_presets)
+        #self.table_sentences_selection.itemChanged.connect(self.rename_presets)
+        #self.table_session_selection.itemChanged.connect(self.rename_presets)
+
+        self.table_sentences_selection.itemChanged.connect(self.handle_preset_rename)
+        self.table_session_selection.itemChanged.connect(self.handle_preset_rename)
+        
+        # Track editing state to prevent duplicate signals
+        self.currently_editing = False
+        self.current_edited_item = None
+        
+        # Connect itemDoubleClicked to start tracking edits
+        self.table_sentences_selection.itemDoubleClicked.connect(self.start_edit_tracking)
+        self.table_session_selection.itemDoubleClicked.connect(self.start_edit_tracking)
+        
+        # Install event filters to catch Return/Enter key
+        self.table_sentences_selection.installEventFilter(self)
+        self.table_session_selection.installEventFilter(self)
+
+        # Assuming these are your QTableWidget instances
+        self.table_sentences_selection.selectionModel().selectionChanged.connect(self.update_selection_cache)
+        self.table_session_selection.selectionModel().selectionChanged.connect(self.update_selection_cache)
+
 
         # Theme selector button
         self.theme_options_button.clicked.connect(self.open_theme_selector)
@@ -370,8 +397,39 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Preset search
         self.search_preset.textChanged.connect(self.filter_presets)
 
+    def start_edit_tracking(self, item):
+        """Called when double-clicking to edit an item"""
+        self.currently_editing = True
+        self.current_edited_item = item
+        self.original_text = item.text()  # Store original value
 
+    def eventFilter(self, source, event):
+        """Handle Return/Enter key press during editing"""
+        if (event.type() == QtCore.QEvent.KeyPress and
+            event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter) and
+            source.state() == QtWidgets.QAbstractItemView.EditingState):
+            
+            # Force close the editor
+            source.closePersistentEditor(source.currentItem())
+            return True  # Event handled
+        
+        return super().eventFilter(source, event)
 
+    def handle_preset_rename(self, item):
+        """Handle the actual renaming after edit completes"""
+        if not self.currently_editing or item != self.current_edited_item:
+            return
+        
+        # Only proceed if text actually changed
+        if item.text() != self.original_text:
+            if self.sender() == self.table_sentences_selection:
+                self.rename_presets(item)
+            elif self.sender() == self.table_session_selection:
+                self.rename_presets(item)
+        
+        # Reset editing state
+        self.currently_editing = False
+        self.current_edited_item = None
 
     def init_styles(self, dialog=None, dialog_color=None, session=None):
         """
@@ -437,6 +495,64 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                             for selector, style in element_styles.items():
                                 style_sheet += f"{selector} {{{style}}}\n"
                             dialog.setStyleSheet(style_sheet)
+
+                        elif "dictionary_controls" in styles_dict and dialog and isinstance(dialog, MultiFolderSelector):
+                            style_dict = styles_dict["dictionary_controls"]
+                            
+                            # Apply styles to checkboxes
+                            if "checkbox" in style_dict:
+                                style_sheet = ""
+                                for selector, style in style_dict["checkbox"].items():
+                                    style_sheet += f"{selector} {{{style}}}\n"
+                                
+                                for i in range(10):  # 0-9 (including the ignored keywords)
+                                    checkbox = dialog.findChild(QtWidgets.QCheckBox, f"dictionary_checkbox_{i}")
+                                    if checkbox:
+                                        checkbox.setStyleSheet(style_sheet)
+                            
+                            # Apply styles to labels
+                            if "label" in style_dict:
+                                style_sheet = ""
+                                for selector, style in style_dict["label"].items():
+                                    style_sheet += f"{selector} {{{style}}}\n"
+                                
+                                for i in range(10):
+                                    label = dialog.findChild(QtWidgets.QLabel, f"dictionary_label_{i}")
+                                    if label:
+                                        label.setStyleSheet(style_sheet)
+                            
+                            # Apply styles to path edits
+                            if "path_edit" in style_dict:
+                                style_sheet = ""
+                                for selector, style in style_dict["path_edit"].items():
+                                    style_sheet += f"{selector} {{{style}}}\n"
+                                
+                                for i in range(10):
+                                    path_edit = dialog.findChild(QtWidgets.QLineEdit, f"dictionary_path_edit_{i}")
+                                    if path_edit:
+                                        path_edit.setStyleSheet(style_sheet)
+                            
+                            # Apply styles to browse buttons
+                            if "browse_button" in style_dict:
+                                style_sheet = ""
+                                for selector, style in style_dict["browse_button"].items():
+                                    style_sheet += f"{selector} {{{style}}}\n"
+                                
+                                for i in range(10):
+                                    browse_button = dialog.findChild(QtWidgets.QPushButton, f"dictionary_browse_button_{i}")
+                                    if browse_button:
+                                        browse_button.setStyleSheet(style_sheet)
+
+                            if "dictionary_container" in styles_dict and dialog and isinstance(dialog, MultiFolderSelector):
+                                style_sheet = ""
+                                for selector, style in styles_dict["dictionary_container"].items():
+                                    style_sheet += f"{selector} {{{style}}}\n"
+                                dialog.dictionary_container.setStyleSheet(style_sheet)
+                                
+                                # And for the content widget
+                                if hasattr(dialog, 'dictionary_content'):
+                                    dialog.dictionary_content.setStyleSheet(style_sheet)
+
 
                         elif dialog_color and element_name == "ColorPickerDialog":
                             print(element_styles.items())
@@ -631,15 +747,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         and customize the header appearance.
         """
         # Get the selected row
-        selected_sentence_row = self.table_sentences_selection.currentRow()
-        selected_preset_row = self.table_session_selection.currentRow()
+        self.sentence_selection_cache  = self.table_sentences_selection.currentRow()
+        self.session_selection_cache = self.table_session_selection.currentRow()
 
 
-        self.sentence_selection_cache = selected_sentence_row
-        self.session_selection_cache = selected_preset_row
-
-        print("cache selected_sentence_row", selected_sentence_row)
-        print("cache session_selection_cache", selected_preset_row)
+        #print("cache selected_sentence_row", self.sentence_selection_cache)
+        #print("cache session_selection_cache", self.session_selection_cache)
 
 
 
@@ -686,45 +799,50 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 ########################################## TEXT PARSING ##########################################
 ########################################## TEXT PARSING ##########################################
 
-    def create_preset(self, folder_list=None, keyword_profiles=None, preset_name="preset_output", highlight_keywords=True, 
-                      output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True, metadata_prefix=";;", multithreading=True):
+    def create_preset(self, selected_files=None, keyword_profiles=None, preset_name=None, highlight_keywords=True, 
+                      output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True, metadata_prefix=";;"):
         """
         Opens a dialog for folder selection, collects keyword profiles, and processes all EPUB, PDF, and TXT files 
         within the selected folders using the chosen profiles. Combines results from all folders.
-        Now supports optional multithreading for faster processing.
         """
         # Start timer
+        self.update_selection_cache()
         self.load_presets()
-        # Initialize selected_dirs
-        selected_dirs = folder_list if folder_list else []
+
 
         if is_gui:
-            self.load_presets(use_cache=False)
-            self.update_selection_cache()
-            preset_name = f'preset_{self.get_next_preset_number()}'
-            dialog = MultiFolderSelector(self, preset_name)
+
+            dialog = MultiFolderSelector(self, preset_name, text_presets_dir=self.text_presets_dir)
 
             self.init_styles(dialog=dialog)
 
+            for child in dialog.findChildren(QtWidgets.QWidget):
+                child.style().unpolish(child)
+                child.style().polish(child)
+
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
-                selected_dirs = dialog.get_selected_folders()
-                highlight_keywords = dialog.get_highlight_keywords_option()
-                output_option = dialog.get_output_option()
-                metadata_settings = dialog.get_extract_metadata_option()
-                #multithreading_settings = dialog.get_multithreading_option()
-                preset_name = dialog.get_preset_name()
-                max_length = dialog.get_max_length()
+                selected_files = dialog.selected_files
+                highlight_keywords = dialog.highlight_keywords_checkbox.isChecked()
+                output_option = dialog.output_option_dropdown.currentText()
+                metadata_settings = dialog.extract_metadata_checkbox.isChecked()
+                if preset_name == None:
+                    preset_name = dialog.preset_name_edit.text()
 
-                if not selected_dirs:
-                    self.show_info_message('No Selection', 'No folders were selected.')
-                    return
+                max_length = int(dialog.max_length_edit.text()) if dialog.max_length_edit.text().isdigit() else 200
                 keyword_profiles = dialog.get_all_keyword_profiles()
-            else:
+                
 
+
+
+                #print("keyword_profiles : ", keyword_profiles)
+                if not selected_files:
+                    self.show_info_message('No Selection', 'No files were selected.')
+                    return
+            else:
                 return
 
         # Ensure we have directories to process
-        if not selected_dirs:
+        if not selected_files:
             if is_gui:
                 self.show_info_message('No Selection', 'No folders were selected.')
             return
@@ -733,10 +851,16 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         all_results = {}
         total_sentences = 0  # Counter for total unique sentences
 
-        # Process folders with or without multithreading
-        def process_single_folder(directory):
-            return self.process_epub_folder(
-                folder_path=directory,
+
+
+        # Start timer    
+        start_time = time.time()
+
+
+
+
+        folder_results = self.process_text_files(
+                file_paths=selected_files,
                 keyword_profiles=keyword_profiles,
                 highlight_keywords=highlight_keywords,
                 output_option=output_option,
@@ -746,36 +870,13 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             )
 
 
-        # Start timer    
-        start_time = time.time()
 
 
-
-        if multithreading:
-            print("MULTITHREADING : ON")
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future_to_dir = {executor.submit(process_single_folder, directory): directory for directory in selected_dirs}
-                for future in concurrent.futures.as_completed(future_to_dir):
-                    directory = future_to_dir[future]
-                    try:
-                        folder_results = future.result()
-                        # Merge results
-                        for keyword, sentences in folder_results.items():
-                            if keyword not in all_results:
-                                all_results[keyword] = []
-                            all_results[keyword].extend(sentences)
-                    except Exception as exc:
-                        print(f"Error processing folder {directory}: {exc}")
-        else:
-            print("MULTITHREADING : OFF")
-            for directory in selected_dirs:
-                if os.path.isdir(directory):
-                    folder_results = process_single_folder(directory)
-                    # Merge results
-                    for keyword, sentences in folder_results.items():
-                        if keyword not in all_results:
-                            all_results[keyword] = []
-                        all_results[keyword].extend(sentences)
+        # Merge results
+        for keyword, sentences in folder_results.items():
+            if keyword not in all_results:
+                all_results[keyword] = []
+            all_results[keyword].extend(sentences)
 
         # Determine the output folder
         target_folder = output_folder if output_folder else self.text_presets_dir
@@ -857,53 +958,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def process_epub_folder_parallel(self, selected_dirs, keyword_profiles, highlight_keywords, output_option, preset_name, max_length, metadata_settings, multithreading=False):
-        """
-        Process multiple folders in parallel if multithreading is enabled.
-        """
-        all_results = {}
-
-        def process_single_folder(directory):
-            return self.process_epub_folder(
-                folder_path=directory,
-                keyword_profiles=keyword_profiles,
-                highlight_keywords=highlight_keywords,
-                output_option=output_option,
-                preset_name=preset_name,
-                max_length=max_length,
-                metadata_settings=metadata_settings
-            )
-
-        if multithreading:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future_to_dir = {executor.submit(process_single_folder, directory): directory for directory in selected_dirs}
-                for future in concurrent.futures.as_completed(future_to_dir):
-                    directory = future_to_dir[future]
-                    try:
-                        folder_results = future.result()
-                        # Merge results
-                        for keyword, sentences in folder_results.items():
-                            if keyword not in all_results:
-                                all_results[keyword] = []
-                            all_results[keyword].extend(sentences)
-                    except Exception as exc:
-                        print(f"Error processing folder {directory}: {exc}")
-        else:
-            # Sequential processing
-            for directory in selected_dirs:
-                if os.path.isdir(directory):
-                    folder_results = process_single_folder(directory)
-                    # Merge results
-                    for keyword, sentences in folder_results.items():
-                        if keyword not in all_results:
-                            all_results[keyword] = []
-                        all_results[keyword].extend(sentences)
-
-        return all_results
 
 
-
-    def process_epub_folder(self, folder_path, keyword_profiles, highlight_keywords=True, output_option="Single output", preset_name="preset_output", max_length=200, metadata_settings=True, metadata_prefix=";;"):
+    def process_text_files(self, file_paths, keyword_profiles, highlight_keywords=True, output_option="Single output", preset_name="preset_output", max_length=200, metadata_settings=True, metadata_prefix=";;"):
         """
         Process a folder of EPUB, PDF, or text files and return the extracted sentences.
         Returns a tuple of (filtered_sentences, folder_path) where filtered_sentences is a dictionary
@@ -934,17 +991,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         #print("Ignored keywords (unique)[0:5]:", ignored_keywords)
 
         # Gather all files in the specified folder
-        file_paths = [
-            os.path.join(folder_path, file) for file in os.listdir(folder_path)
-            if os.path.isfile(os.path.join(folder_path, file)) and 
-            file.endswith(('.epub', '.pdf', '.txt'))
-        ]
 
-        if not file_paths:
-            print(f"No supported files found in folder: {folder_path}")
-            return {}, folder_path
-
-        print(f"Found {len(file_paths)} files to process.")
 
         # Initialize storage for combined sentences and processed keywords
         combined_sentences = {
@@ -1088,22 +1135,29 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def contains_ignored_keyword(self, sentence, ignored_keywords):
+        """
+        Check if a sentence contains any of the ignored keywords.
+        Handles both regular ignored keywords and exact matches (with & prefix).
+        """
         for ignored_keyword in ignored_keywords:
-            # Handle cases with both forms ignored or only plural ignored
-            if ignored_keyword.startswith('!&'):
-                # Ignore only the plural form
-                base_ignored_keyword = ignored_keyword.lstrip('!&')
-                forms_to_ignore = [base_ignored_keyword]  # Only plural form
-            else:
-                # Ignore both singular and plural forms
-                base_ignored_keyword = ignored_keyword.lstrip('!')
-                forms_to_ignore = self.get_keyword_forms(base_ignored_keyword)  # Both forms
-
-            # Check if any form is present in the sentence
-            for form in forms_to_ignore:
-                if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
-                    return True
-        return False         
+            # Remove the ! prefix first
+            keyword = ignored_keyword.lstrip('!')
+            
+            # Get the forms to check (handles both exact and regular matches)
+            forms_to_check, exact_matches = self.get_keyword_forms(keyword)
+            
+            # Check each form
+            for form_group, is_exact in zip(forms_to_check, exact_matches):
+                for form in form_group:
+                    # For exact matches (with &), we need to match the exact form
+                    if is_exact:
+                        pattern = r'(?<!\w){}(?!\w)'.format(re.escape(form))
+                    else:
+                        pattern = r'\b{}\b'.format(re.escape(form))
+                    
+                    if re.search(pattern, sentence, re.IGNORECASE):
+                        return True
+        return False   
 
 
 
@@ -1198,18 +1252,16 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def get_plural_form(self, keyword):
-        if keyword.endswith('s'):
-            return keyword  # Remove 's' for singular
-        else:
-            return keyword + 's'  # Add 's' for plural
+        return self.plural.plural(keyword)
 
     def get_singular_form(self, keyword):
-        if keyword.endswith('s'):
-            return keyword[:-1]  # Remove 's' for singular
-        else:
+        # For words already in singular form
+        if self.plural.singular_noun(keyword) == False:
             return keyword
+        # For plurals
+        return self.plural.singular_noun(keyword)
 
-            
+                
     def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords, max_length, metadata_settings=True, metadata_prefix=";;"):
         """
         Extract sentences containing the provided keywords from the list of files.
@@ -1364,16 +1416,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         print(f"Extracted {len(unique_sentences)} unique sentences.")
 
 
-                                
-########################################## TEXT PARSING END ##########################################
-########################################## TEXT PARSING END ##########################################
-########################################## TEXT PARSING END ##########################################
-
-    def get_next_preset_number(self):
-        preset_files = [f for f in os.listdir(self.text_presets_dir) if f.startswith('preset_') and f.endswith('.txt')]
-        existing_numbers = [int(f[len('preset_'):-len('.txt')]) for f in preset_files if f[len('preset_'):-len('.txt')].isdigit()]
-        return max(existing_numbers, default=0) + 1
-
 
 
     def create_directories(self):
@@ -1461,7 +1503,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def delete_sentences_files(self):
         """Deletes the selected preset file by sending it to the Recycle Bin and updates the preset table."""
-
         # Get the selected row
         selected_row = self.table_sentences_selection.currentRow()
         self.update_selection_cache()
@@ -1484,7 +1525,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         if os.path.exists(file_path):
             try:
                 send2trash(file_path)
-                # self.show_info_message('Success', f'Preset "{file_name}" sent to Recycle Bin.')
             except Exception as e:
                 self.show_info_message('Error', f'Failed to send preset to Recycle Bin. Error: {str(e)}')
                 return
@@ -1494,6 +1534,11 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Reload the presets
         self.load_presets(use_cache=False)
 
+        # After deletion, try to select the previous row if the table isn't empty
+        if self.table_sentences_selection.rowCount() > 0:
+            new_selected_row = min(selected_row, self.table_sentences_selection.rowCount() - 1)
+            self.table_sentences_selection.selectRow(new_selected_row)
+            self.sentence_selection_cache = new_selected_row  # Update cache
 
 
 
@@ -1650,21 +1695,20 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         if selected_row == -1:
             print('Warning', 'No preset selected for deletion.')
             return
-        
+
         # Get the file name from the first column of the selected row
         file_item = self.table_session_selection.item(selected_row, 0)
         if not file_item:
             self.show_info_message('Warning', 'No file associated with the selected preset.')
             return
-        
+
         file_name = file_item.text() + ".txt"
         file_path = os.path.join(self.session_presets_dir, file_name)
-        
+
         # Send the file to the recycle bin if it exists
         if os.path.exists(file_path):
             try:
-                send2trash(file_path)  # Send the file to the recycle bin
-                # self.show_info_message('Success', f'Preset "{file_name}" deleted successfully.')
+                send2trash(file_path)
             except Exception as e:
                 self.show_info_message('Error', f'Failed to delete preset. Error: {str(e)}')
                 return
@@ -1673,6 +1717,12 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Reload the presets
         self.load_presets(use_cache=False)
+
+        # After deletion, try to select the previous row if the table isn't empty
+        if self.table_session_selection.rowCount() > 0:
+            new_selected_row = min(selected_row, self.table_session_selection.rowCount() - 1)
+            self.table_session_selection.selectRow(new_selected_row)
+            self.session_selection_cache = new_selected_row  # Update cache
 
 
     def open_preset(self):
@@ -1709,6 +1759,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def rename_presets(self, item):
         """Rename the preset file based on the new text typed in the row."""
 
+        print("-- Renaming file")
         try:
             # Determine which table triggered the rename
             if item.tableWidget() == self.table_sentences_selection:
@@ -1772,28 +1823,38 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def load_presets(self, use_cache=False):
         """Load existing presets into the table by calling specific functions."""
+        # Store current selections before clearing
+        sentence_row = self.table_sentences_selection.currentRow()
+        session_row = self.table_session_selection.currentRow()
+
         # Clear the tables and caches
         self.table_sentences_selection.setRowCount(0)
         self.table_session_selection.setRowCount(0)
-
-        # Sort the tables by the first column (preset names) A to Z
-        self.table_sentences_selection.sortItems(0, QtCore.Qt.AscendingOrder)
-        self.table_session_selection.sortItems(0, QtCore.Qt.AscendingOrder)
 
         # Load sentence presets
         self.load_table_sentences_selection(use_cache)
         # Load session presets
         self.load_session_presets(use_cache)
 
-        self.select_rows_from_cache(use_cache)
+        # Restore selections if they were valid
+        if sentence_row >= 0 and sentence_row < self.table_sentences_selection.rowCount():
+            self.table_sentences_selection.selectRow(sentence_row)
+        if session_row >= 0 and session_row < self.table_session_selection.rowCount():
+            self.table_session_selection.selectRow(session_row)
+
+        # Update the cache with the current selections
+        self.sentence_selection_cache = sentence_row
+        self.session_selection_cache = session_row
 
     def select_rows_from_cache(self, use_cache=False):
         """Select the previously selected rows from the cache after an action."""
+
+        print(5555,self.sentence_selection_cache, self.session_selection_cache)
         sentence_row = self.sentence_selection_cache
         session_row = self.session_selection_cache
-
-
-
+        
+        print(sentence_row)
+        print(session_row)
         if sentence_row >= 0 and sentence_row < self.table_sentences_selection.rowCount():
             self.table_sentences_selection.selectRow(sentence_row)
 
@@ -1837,10 +1898,23 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Count the number of empty lines in the text file
                 empty_line_count = 0
                 file_path = os.path.join(self.text_presets_dir, filename)
-                with open(file_path, 'r', encoding='utf-8') as file:
-                    for line in file:
-                        if line.strip() == "":  # Check for empty line
-                            empty_line_count += 1
+                
+                try:
+                    # Try UTF-8 first, fall back to other encodings if needed
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as file:
+                            for line in file:
+                                if line.strip() == "":  # Check for empty line
+                                    empty_line_count += 1
+                    except UnicodeDecodeError:
+                        # Try ISO-8859-1 if UTF-8 fails
+                        with open(file_path, 'r', encoding='iso-8859-1') as file:
+                            for line in file:
+                                if line.strip() == "":  # Check for empty line
+                                    empty_line_count += 1
+                except Exception as e:
+                    print(f"Error reading file {filename}: {str(e)}")
+                    empty_line_count = 0  # Set to 0 if we can't read the file
 
                 # Add the empty line count to the second column
                 count_item = QtWidgets.QTableWidgetItem(str(empty_line_count))
@@ -1855,6 +1929,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Set column widths
         self.table_sentences_selection.setColumnWidth(0, 315)  # Adjust as needed
         self.table_sentences_selection.setColumnWidth(1, 80)   # Adjust as needed
+
 
     def load_session_presets(self, use_cache=False):
         """Load session preset files into the session presets table and update the cache, including 'Total' and 'Time' columns."""
@@ -1913,7 +1988,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 # Update cache with the current filenames
                 self.session_names_cache.append(filename)
-
 
 
     def start_session_from_files(self, sentence_preset_path=None, session_preset_path=None, randomize_settings=True):
@@ -2074,11 +2148,10 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.save_session_settings()
 
-
     def load_session_settings(self):
         session_settings_path = os.path.join(self.presets_dir, 'session_settings.txt')
 
-        # Default settings to be used if there's a problem with the file
+        # Default settings - note dictionary_settings checkboxes default to False
         default_settings = {
             "selected_sentence_row": -1,
             "selected_session_row": -1,
@@ -2086,64 +2159,81 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "auto_start_settings": False,
             "autocopy_settings": False,
             "theme_settings": 'default_theme.txt',
-            "shortcuts": self.default_shortcuts
+            "shortcuts": self.default_shortcuts,
+            "keyword_method": "Method 1: Dictionary Presets",
+            "dictionary_settings": {str(i): {"enabled": False, "path": ""} for i in range(10)}
         }
+
+        # Initialize with default settings
+        current_settings = default_settings.copy()
 
         # Load current settings if the file exists
         if os.path.exists(session_settings_path):
             try:
-                with open(session_settings_path, 'r') as f:
-                    current_settings = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError):
-                current_settings = default_settings.copy()  # Fallback to default if there is an error
-                print("Error loading session settings. Using default settings.")
-        else:
-            current_settings = default_settings.copy()  # Use default settings if the file doesn't exist
-            print("Session settings file not found. Using default settings.")
+                with open(session_settings_path, 'r', encoding='utf-8') as f:
+                    file_settings = json.load(f)
+                    
+                    # Merge settings while preserving default structure
+                    for key in default_settings:
+                        if key in file_settings:
+                            if key == "dictionary_settings":
+                                # Special merge for dictionary settings
+                                for i in range(10):
+                                    if str(i) in file_settings["dictionary_settings"]:
+                                        current_settings["dictionary_settings"][str(i)] = {
+                                            "enabled": file_settings["dictionary_settings"][str(i)].get("enabled", False),
+                                            "path": file_settings["dictionary_settings"][str(i)].get("path", "")
+                                        }
+                            else:
+                                current_settings[key] = file_settings[key]
+                    
+            except Exception as e:
+                print(f"Error loading session settings: {str(e)}. Using default settings.")
 
-        # Validate the shortcuts
-        if not self.validate_shortcuts(current_settings.get('shortcuts', {})):
-            print("Invalid shortcuts detected. Resetting to default shortcuts.")
-            self.reset_shortcuts()  # Reset only the shortcuts to the default
-            current_settings['shortcuts'] = self.default_shortcuts  # Ensure in-memory settings reflect the reset
+        # Apply settings to instance variables
+        self.shortcut_settings = current_settings["shortcuts"]
+        self.randomize_settings = current_settings["randomize_settings"]
+        self.auto_start_settings = current_settings["auto_start_settings"]
+        self.autocopy_settings = current_settings["autocopy_settings"]
+        self.current_theme = current_settings["theme_settings"]
+        self.keyword_method = current_settings.get("keyword_method", "Method 1: Dictionary Presets")
+        self.dictionary_settings = current_settings["dictionary_settings"]
 
-        # Apply the valid or reset settings
-        self.shortcut_settings = current_settings.get('shortcuts', self.default_shortcuts)
-        self.randomize_settings = current_settings.get('randomize_settings', False)
-        self.auto_start_settings = current_settings.get('auto_start_settings', False)
-        self.autocopy_settings = current_settings.get('autocopy_settings', False)
-        self.current_theme = current_settings.get('theme_settings', 'default_theme.txt')
+        # Apply UI settings
+        self.randomize_toggle.setChecked(self.randomize_settings)
+        self.auto_start_toggle.setChecked(self.auto_start_settings)
+        self.autocopy_toggle.setChecked(self.autocopy_settings)
 
-        # Toggle the randomize and auto-start settings
-        self.randomize_toggle.setChecked(self.randomize_settings)  # Toggle based on loaded value
-        self.auto_start_toggle.setChecked(self.auto_start_settings)  # Toggle based on loaded value
-        self.autocopy_toggle.setChecked(self.autocopy_settings)  # Toggle based on loaded value
+        # Row selection logic
+        selected_sentence_row = current_settings["selected_sentence_row"]
+        selected_session_row = current_settings["selected_session_row"]
 
-        # --- Row selection logic ---
-        selected_sentence_row = current_settings.get('selected_sentence_row', -1)
-        selected_session_row = current_settings.get('selected_session_row', -1)
-
-        # Ensure selected rows are within the table's bounds
         if 0 <= selected_sentence_row < self.table_sentences_selection.rowCount():
             self.table_sentences_selection.selectRow(selected_sentence_row)
-        else:
-            print("Invalid or out-of-bounds selected_sentence_row, no selection applied.")
 
         if 0 <= selected_session_row < self.table_session_selection.rowCount():
             self.table_session_selection.selectRow(selected_session_row)
-        else:
-            print("Invalid or out-of-bounds selected_session_row, no selection applied.")
 
         self.update_selection_cache()
-        # Save the session settings after loading them (in case anything needs updating)
-        self.save_session_settings()
+
+
 
     def save_session_settings(self):
-        """Save the current session settings to the session_settings.txt file."""
+        """Save only core session settings, leaving dictionary settings untouched"""
         session_settings_path = os.path.join(self.presets_dir, 'session_settings.txt')
+        
+        # Load existing settings to preserve dictionary parts
+        current_settings = {}
+        if os.path.exists(session_settings_path):
+            try:
+                with open(session_settings_path, 'r', encoding='utf-8') as f:
+                    current_settings = json.load(f)
+            except Exception as e:
+                print(f"Error loading settings: {str(e)}")
+                current_settings = {}
 
-        # Collect the current settings
-        current_settings = {
+        # Update only the core settings we want to manage
+        current_settings.update({
             "selected_sentence_row": self.table_sentences_selection.currentRow(),
             "selected_session_row": self.table_session_selection.currentRow(),
             "randomize_settings": self.randomize_settings,
@@ -2151,12 +2241,16 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "autocopy_settings": self.autocopy_settings,
             "theme_settings": self.current_theme,
             "shortcuts": self.shortcut_settings
-        }
+        })
+        
+        # Save back to file
+        try:
+            with open(session_settings_path, 'w', encoding='utf-8') as f:
+                json.dump(current_settings, f, indent=4)
+        except Exception as e:
+            print(f"Error saving session settings: {str(e)}")
 
-        # Save the settings to the file
-        with open(session_settings_path, 'w') as f:
-            json.dump(current_settings, f, indent=4)
-        print("Session settings saved.")
+
 
 
     def validate_shortcuts(self, shortcuts):
@@ -3762,270 +3856,477 @@ class MaxLengthDelegate(QStyledItemDelegate):
 
             # Subclass to enable multifolder selection.
 
-
 class MultiFolderSelector(QtWidgets.QDialog):
-    def __init__(self, parent=None, preset_name="preset_1"):
+    def __init__(self, parent=None, preset_name="", text_presets_dir=None):
         super(MultiFolderSelector, self).__init__(parent)
-        self.setWindowTitle("Select Folders")
-        self.setMinimumWidth(400)
-        self.setMinimumHeight(500)  # Adjusted height to accommodate the new input fields
+
+        
+        self.setWindowTitle("Select Files")
+
+        self.setFixedSize(600, 780)  # This makes the window non-resizable
+
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
 
-        # Initialize selected folders list
-        self.selected_folders = []
+        # Initialize selected files list
+        self.selected_files = []
+        self.text_presets_dir=text_presets_dir
 
-        # Initialize keyword profiles as empty lists instead of strings
-        self.keyword_profiles = {f"Highlight color {i}": [] for i in range(1, 10)}
-        self.current_profile = "Highlight color 1"
 
-        # Layout
-        layout = QtWidgets.QVBoxLayout(self)
 
-        # List widget to display selected folders
+        # Initialize keyword methods
+        self.keyword_methods = ["Method 1: Dictionary Presets", "Method 2: Manual Search"]
+        self.current_method = self.keyword_methods[0]
+        
+
+        # Main layout
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setSpacing(10)  # Add some spacing between elements
+
+        # File selection section (more compact)
+        self.file_section = QtWidgets.QGroupBox("Selected Files")
+        self.file_layout = QtWidgets.QVBoxLayout(self.file_section)
+        
+        # List widget for selected files
         self.list_widget = QtWidgets.QListWidget(self)
-        layout.addWidget(self.list_widget)
+        self.list_widget.setToolTip("Selected files will be processed in order")
+        self.list_widget.setMinimumHeight(100)  # Reduced height
+        self.list_widget.setMaximumHeight(200)
+        self.file_layout.addWidget(self.list_widget)
 
-        # Preset Name Input (below the list widget)
+
+        # Preset Name Input with some spacing
         self.preset_name_edit = QtWidgets.QLineEdit(self)
-        self.preset_name_edit.setPlaceholderText("Enter Preset Name")
-        self.preset_name_edit.setText(preset_name)
-        layout.addWidget(self.preset_name_edit)
+        self.preset_name_edit.setPlaceholderText("Will be generated when files are selected")
+        self.preset_name_edit.setText("")
+        self.file_layout.addWidget(QtWidgets.QLabel("Preset Name:"))
+        self.file_layout.addWidget(self.preset_name_edit)
+        
+        self.layout.addWidget(self.file_section)
+        self.layout.addSpacing(10)  # Add space between sections
 
-        # Dropdown to select keyword profile
-        self.profile_dropdown = QtWidgets.QComboBox(self)
-        self.profile_dropdown.addItems(self.keyword_profiles.keys())
-        self.profile_dropdown.currentTextChanged.connect(self.load_profile_keywords)
-        layout.addWidget(self.profile_dropdown)
 
-        # Scrollable text input for keywords
-        self.keyword_input = QtWidgets.QTextEdit(self)
+        # Method selection section
+        self.method_section = QtWidgets.QGroupBox("Keyword Methods")
+        self.method_layout = QtWidgets.QVBoxLayout(self.method_section)
+        
+        # Keyword Method Selection
+        self.method_dropdown = QtWidgets.QComboBox(self)
+        self.method_dropdown.addItems(self.keyword_methods)
+        self.method_dropdown.currentIndexChanged.connect(self.change_keyword_method)
+        self.method_layout.addWidget(self.method_dropdown)
+
+        # Stacked widget for different methods
+        self.method_stack = QtWidgets.QStackedWidget(self)
+        self.method_stack.setMinimumHeight(350)  # More space for methods
+        self.method_layout.addWidget(self.method_stack)
+
+        # Method 1: Dictionary Presets
+        self.method1_widget = QtWidgets.QWidget()
+        self.method1_layout = QtWidgets.QVBoxLayout(self.method1_widget)
+        
+        self.dictionary_container = QtWidgets.QScrollArea()  # Add scroll area
+        self.dictionary_container.setWidgetResizable(True)
+        self.dictionary_content = QtWidgets.QWidget()
+        self.dictionary_layout = QtWidgets.QVBoxLayout(self.dictionary_content)
+        self.dictionary_layout.setContentsMargins(5, 5, 5, 5)
+        
+        self.dictionary_controls = []
+        
+        # Create highlight color controls (1-9)
+        for i in range(1, 10):
+            prefix = f"[{i}]"
+            name = f"Highlight color {i}"
+            
+            control = {
+                'checkbox': QtWidgets.QCheckBox(),
+                'label': QtWidgets.QLabel(f"{prefix} {name}:"),
+                'path_edit': QtWidgets.QLineEdit(),
+                'browse_button': QtWidgets.QPushButton("Browse...")
+            }
+            
+            control['path_edit'].setMinimumWidth(250)
+            control['path_edit'].textChanged.connect(self.path_edited)
+            control['browse_button'].clicked.connect(lambda _, idx=i: self.browse_dictionary_file(idx))
+
+            control['checkbox'].setObjectName(f"dictionary_checkbox_{i}")
+            control['label'].setObjectName(f"dictionary_label_{i}")
+            control['path_edit'].setObjectName(f"dictionary_path_edit_{i}")
+            control['browse_button'].setObjectName(f"dictionary_browse_button_{i}")
+
+            hbox = QtWidgets.QHBoxLayout()
+            hbox.addWidget(control['checkbox'])
+            hbox.addWidget(control['label'])
+            hbox.addWidget(control['path_edit'], 1)
+            hbox.addWidget(control['browse_button'])
+            
+            self.dictionary_layout.addLayout(hbox)
+            self.dictionary_controls.append(control)
+        
+        # Separator before ignored keywords (more visible)
+        separator = QtWidgets.QFrame()
+        separator.setFrameShape(QtWidgets.QFrame.HLine)
+        separator.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.dictionary_layout.addSpacing(10)
+        self.dictionary_layout.addWidget(separator)
+        self.dictionary_layout.addSpacing(10)
+        
+        # Ignored keywords control (0) - more prominent
+        control = {
+            'checkbox': QtWidgets.QCheckBox(),
+            'label': QtWidgets.QLabel("[0] Ignored keywords:"),
+            'path_edit': QtWidgets.QLineEdit(),
+            'browse_button': QtWidgets.QPushButton("Browse...")
+        }
+        
+        control['path_edit'].setMinimumWidth(250)
+        control['path_edit'].textChanged.connect(self.path_edited)
+        control['browse_button'].clicked.connect(lambda _, idx=0: self.browse_dictionary_file(idx))
+
+        
+        # Add object names
+        control['checkbox'].setObjectName("dictionary_checkbox_0")
+        control['label'].setObjectName("dictionary_label_0")
+        control['path_edit'].setObjectName("dictionary_path_edit_0")
+        control['browse_button'].setObjectName("dictionary_browse_button_0")
+
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(control['checkbox'])
+        hbox.addWidget(control['label'])
+        hbox.addWidget(control['path_edit'], 1)
+        hbox.addWidget(control['browse_button'])
+        
+        self.dictionary_layout.addLayout(hbox)
+        self.dictionary_controls.insert(0, control)
+        
+        self.dictionary_layout.addStretch()
+        self.dictionary_container.setWidget(self.dictionary_content)
+        self.method1_layout.addWidget(self.dictionary_container)
+        self.method_stack.addWidget(self.method1_widget)
+
+        # Method 2: Manual Search
+        self.method2_widget = QtWidgets.QWidget()
+        self.method2_layout = QtWidgets.QVBoxLayout(self.method2_widget)
+        
+        self.profile_dropdown = QtWidgets.QComboBox()
+        self.profile_dropdown.addItems([f"Highlight color {i}" for i in range(1, 10)] + ["Ignored keywords"])
+        self.profile_dropdown.currentIndexChanged.connect(self.change_manual_profile)
+        self.method2_layout.addWidget(self.profile_dropdown)
+        
+        self.keyword_input = QtWidgets.QTextEdit()
         self.keyword_input.setPlaceholderText(
             "Enter keywords (one per line)\n\n"
             "\"Keyword\" : search for both singular and plural forms\n"
             "\"&Keyword\" : search the given form\n\n"
             "\"Keyword1 + Keyword2 + ...\" : search for both keywords, either forms\n"
             "\"&Keyword1 + &Keyword2 + ...\" : search for both keywords, given forms\n\n"
-            "\"!Keyword\" : ignore sentences with either singular or plural forms\n"
-            "\"!&Keyword\" : ignore sentences with the given form\n\n"
             "\"#Keyword\" : highlight the given form without searching it\n"
-            "\";Comment\" : ignore line"
-        )
-        self.keyword_input.setMinimumHeight(100)
-        self.keyword_input.textChanged.connect(self.save_current_profile_keywords)
-        layout.addWidget(self.keyword_input)
+            "\";Comment\" : ignore the line or keyword"
+
+        )        
+        self.keyword_input.setMinimumHeight(250)
+        self.method2_layout.addWidget(self.keyword_input)
+        
+        self.manual_profiles = {f"Highlight color {i}": [] for i in range(1, 10)}
+        self.manual_profiles["Ignored keywords"] = []
+        self.current_manual_profile = "Highlight color 1"
+        
+        self.method_stack.addWidget(self.method2_widget)
+        self.method_stack.setCurrentIndex(0)
+        
+        self.layout.addWidget(self.method_section)
+
 
         # Max Length Input Field
         max_length_layout = QtWidgets.QHBoxLayout()
-        
-        # Label for max length
-        self.max_length_label = QtWidgets.QLabel("Max Length:", self)
+        self.max_length_label = QtWidgets.QLabel("Max Length:")
         max_length_layout.addWidget(self.max_length_label)
-
-        # Input for max length
-        self.max_length_edit = QtWidgets.QLineEdit(self)
-        self.max_length_edit.setPlaceholderText("Enter max sentence length (default: 200 characters)")
-        self.max_length_edit.setText("200")  # Default value
-        self.max_length_edit.setValidator(QtGui.QIntValidator(1, 10000, self))  # Only positive integers allowed
+        self.max_length_edit = QtWidgets.QLineEdit()
+        self.max_length_edit.setText("200")
+        self.max_length_edit.setValidator(QtGui.QIntValidator(1, 10000, self))
         max_length_layout.addWidget(self.max_length_edit)
+        self.layout.addLayout(max_length_layout)
 
-        layout.addLayout(max_length_layout)
+        # Checkboxes
+        self.highlight_keywords_checkbox = QtWidgets.QCheckBox("Highlight Keywords")
+        self.highlight_keywords_checkbox.setChecked(True)
+        self.layout.addWidget(self.highlight_keywords_checkbox)
 
-        # Checkbox for "Highlight Keywords"
-        self.highlight_keywords_checkbox = QtWidgets.QCheckBox("Highlight Keywords", self)
-        self.highlight_keywords_checkbox.setChecked(True)  # Check the checkbox by default
-        layout.addWidget(self.highlight_keywords_checkbox)
+        self.extract_metadata_checkbox = QtWidgets.QCheckBox("Extract Metadata")
+        self.extract_metadata_checkbox.setChecked(True)
+        self.layout.addWidget(self.extract_metadata_checkbox)
 
-
-        # Checkbox for "Extract Metadata"
-        self.extract_metadata_checkbox = QtWidgets.QCheckBox("Extract Metadata", self)
-        self.extract_metadata_checkbox.setChecked(True)  # Check the checkbox by default
-        layout.addWidget(self.extract_metadata_checkbox)
-
-        # Checkbox for "Multithreading setting"
-        #self.multithreading_checkbox = QtWidgets.QCheckBox("Multithreading", self)
-        #self.multithreading_checkbox.setChecked(False)  # Check the checkbox by default
-        #layout.addWidget(self.multithreading_checkbox)
-
-
-        # Dropdown menu for output options
-        self.output_option_dropdown = QtWidgets.QComboBox(self)
+        # Output options
+        self.output_option_dropdown = QtWidgets.QComboBox()
         self.output_option_dropdown.addItems(["Single output", "All output"])
-        layout.addWidget(self.output_option_dropdown)
+        self.layout.addWidget(self.output_option_dropdown)
 
         # Buttons
         button_layout = QtWidgets.QHBoxLayout()
+        self.add_files_button = QtWidgets.QPushButton("Add File(s)")
+        self.add_files_button.clicked.connect(self.multi_select_files)
+        button_layout.addWidget(self.add_files_button)
 
-        # Button for adding folders
-        self.add_folders_button = QtWidgets.QPushButton("Add Folder(s)", self)
-        self.add_folders_button.clicked.connect(self.multi_select_folders)
-        self.add_folders_button.setAutoDefault(False)
-        button_layout.addWidget(self.add_folders_button)
-
-        # Button to remove selected folder
-        self.remove_button = QtWidgets.QPushButton("Remove folder", self)
-        self.remove_button.clicked.connect(self.remove_folder)
-        self.remove_button.setAutoDefault(False)
+        self.remove_button = QtWidgets.QPushButton("Remove File")
+        self.remove_button.clicked.connect(self.remove_file)
         button_layout.addWidget(self.remove_button)
 
-        # OK and Cancel buttons
-        self.ok_button = QtWidgets.QPushButton("OK", self)
+        self.ok_button = QtWidgets.QPushButton("OK")
         self.ok_button.clicked.connect(self.accept)
-        self.ok_button.setAutoDefault(True)
         button_layout.addWidget(self.ok_button)
 
-        self.cancel_button = QtWidgets.QPushButton("Cancel", self)
-        self.cancel_button.clicked.connect(self.reject)
-        self.cancel_button.setAutoDefault(False)
+        self.cancel_button = QtWidgets.QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.close_dialogue)
         button_layout.addWidget(self.cancel_button)
 
-        layout.addLayout(button_layout)
+        self.layout.addLayout(button_layout)
 
-        # Set the default focus to the list widget
-        self.list_widget.setFocus()
-
-        # Ensure Enter triggers OK button
-        self.ok_button.setFocusPolicy(QtCore.Qt.StrongFocus)
-
-        self.init_message_boxes()
-        self.keyword_input.setFocus()
+        # Load initial settings
+        self.load_dictionary_settings()
 
 
-    def get_extract_metadata_option(self):
-        return self.extract_metadata_checkbox.isChecked()
+    def browse_dictionary_file(self, index):
+        """Open file dialog to select dictionary file and auto-enable checkbox"""
+        file_dialog = QtWidgets.QFileDialog(self)
+        file_dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
+        file_dialog.setNameFilter("Text Files (*.txt)")
+        
+        if file_dialog.exec_():
+            files = file_dialog.selectedFiles()
+            if files:
+                path = files[0]
+                control = self.dictionary_controls[index]
+                control['path_edit'].setText(self.format_path_display(path))  # Display shortened path
+                control['path_edit'].setToolTip(path)  # Store full path as tooltip
+                control['checkbox'].setChecked(True)  # Auto-enable the checkbox
+                
+                
 
 
-    def get_multithreading_option(self):
-        return self.multithreading_checkbox.isChecked()
+    def path_edited(self):
+        """Handle manual editing of path fields"""
+        sender = self.sender()  # Get which QLineEdit was edited
+        for control in self.dictionary_controls:
+            if control['path_edit'] == sender:
+                # Clear both display text and tooltip when empty
+                if not sender.text().strip():
+                    sender.setToolTip("")
+                
+                break
 
 
+    def save_dictionary_settings(self):
+        """Save only dictionary-related settings"""
+        settings_path = os.path.join(self.parent().presets_dir, 'session_settings.txt')
+        
+        # Load existing settings first
+        current_settings = {}
+        if os.path.exists(settings_path):
+            try:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    current_settings = json.load(f)
+            except Exception as e:
+                print(f"Error loading settings: {str(e)}")
+                current_settings = {}
 
-    def get_max_length(self):
-        """Return the max sentence length as an integer, or 200 if invalid."""
+        # Update only the dictionary settings
+        dictionary_settings = {}
+        for i, control in enumerate(self.dictionary_controls):
+            path = control['path_edit'].toolTip() or control['path_edit'].text()
+            # Only save if path exists or is being explicitly cleared
+            if not path.strip() or os.path.exists(path):
+                dictionary_settings[str(i)] = {
+                    'enabled': control['checkbox'].isChecked(),
+                    'path': path if path.strip() else ""  # Ensure empty string for cleared paths
+                }
+
+        current_settings.update({
+            "keyword_method": self.current_method,
+            "dictionary_settings": dictionary_settings
+        })
+        
+        # Save back to file
         try:
-            return int(self.max_length_edit.text())
-        except ValueError:
-            return 200
+            with open(settings_path, 'w', encoding='utf-8') as f:
+                json.dump(current_settings, f, indent=4)
+        except Exception as e:
+            print(f"Error saving dictionary settings: {str(e)}")
 
-    def get_highlight_keywords_option(self):
-        return self.highlight_keywords_checkbox.isChecked()
 
-    def get_output_option(self):
-        return self.output_option_dropdown.currentText()
+        #print("SAVING :",current_settings)
 
-    def get_selected_folders(self):
-        return self.selected_folders
+    def load_dictionary_settings(self):
+        """Load only dictionary-related settings"""
 
-    def get_preset_name(self):
-        return self.preset_name_edit.text()
+        settings_path = os.path.join(self.parent().presets_dir, 'session_settings.txt')
+        if os.path.exists(settings_path):
+            try:
+                with open(settings_path, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+                    
+                    # Load keyword method
+                    self.current_method = settings.get("keyword_method", self.keyword_methods[0])
+                    self.method_dropdown.setCurrentText(self.current_method)
+                    
+                    # Load dictionary settings
+                    if "dictionary_settings" in settings:
+                        for i, control in enumerate(self.dictionary_controls):  # This includes index 0
+                            if str(i) in settings["dictionary_settings"]:
+                                cfg = settings["dictionary_settings"][str(i)]
+                                control['checkbox'].setChecked(cfg.get('enabled', False))
+                                full_path = cfg.get('path', '')
+                                control['path_edit'].setText(self.format_path_display(full_path))
+                                control['path_edit'].setToolTip(full_path)
+            except Exception as e:
+                print(f"Error loading dictionary settings: {str(e)}")
+
+            #print("LOADING :",settings)
+
+    def change_keyword_method(self, index):
+        """Switch between keyword methods"""
+        self.current_method = self.keyword_methods[index]
+        self.method_stack.setCurrentIndex(index)
+        
+
+
+    def change_manual_profile(self, index):
+        """Change manual keyword profile and save current content"""
+        if hasattr(self, 'current_manual_profile'):
+            current_text = self.keyword_input.toPlainText()
+            self.manual_profiles[self.current_manual_profile] = [
+                line.strip() for line in current_text.splitlines() if line.strip()
+            ]
+        
+        profile_name = self.profile_dropdown.itemText(index)
+        self.current_manual_profile = profile_name
+        self.keyword_input.setPlainText("\n".join(self.manual_profiles[profile_name]))
+
+
+
+
+    def get_unique_preset_name(self, base_name):
+        """Generate a unique preset name by adding incremental number if needed"""
+        name = base_name
+        counter = 1
+        while os.path.exists(os.path.join(self.text_presets_dir, name + ".txt")):
+            name = f"{base_name} ({counter})"
+            counter += 1
+        return name
+
+    def multi_select_files(self):
+        """Select multiple files and generate name"""
+        file_dialog = QtWidgets.QFileDialog(self)
+        file_dialog.setFileMode(QtWidgets.QFileDialog.ExistingFiles)
+        file_dialog.setNameFilter("Supported Files (*.epub *.pdf *.txt)")
+        
+        if file_dialog.exec_():
+            files = file_dialog.selectedFiles()
+            for file in files:
+                if file and file not in self.selected_files:
+                    self.selected_files.append(file)
+                    display_path = self.format_path_display(file)
+                    self.list_widget.addItem(display_path)
+            
+            self.update_preset_name()
+
+    def remove_file(self):
+        """Remove selected file from list"""
+        selected_items = self.list_widget.selectedItems()
+        if not selected_items:
+            return
+            
+        # Get the full paths of selected items by matching display names
+        for item in selected_items:
+            display_path = item.text()
+            # Find the full path that matches this display path
+            for file in self.selected_files[:]:  # Make a copy for iteration
+                if self.format_path_display(file) == display_path:
+                    self.selected_files.remove(file)
+                    break
+            self.list_widget.takeItem(self.list_widget.row(item))
+        
+        self.update_preset_name()
+
+    def update_preset_name(self):
+        """Update the preset name based on selected files"""
+        if not self.selected_files:
+            self.preset_name_edit.setText("")
+            return
+        
+        first_file = os.path.splitext(os.path.basename(self.selected_files[0]))[0]
+        if len(self.selected_files) == 1:
+            base_name = f"TEXT_{first_file}"
+        else:
+            base_name = f"TEXT_{first_file} + ({len(self.selected_files)-1})"
+        
+        unique_name = self.get_unique_preset_name(base_name)
+        self.preset_name_edit.setText(unique_name)
+
+
+
+    def format_path_display(self, path):
+        """Format path for display (show last 2 components)"""
+        if not path:
+            return ""
+        parts = path.replace('\\', '/').split('/')
+        if len(parts) > 2:
+            return f".../{'/'.join(parts[-2:])}"
+        return path
+
+
+    def closeEvent(self, event):
+        """Save settings when dialog is closed (including with Cancel)"""
+        self.save_dictionary_settings()
+        super().closeEvent(event)
+
+    # And add this new method:
+    def close_dialogue(self):
+        """Handle cancel button click"""
+        self.save_dictionary_settings()
+        self.reject()  # This properly closes the dialog
+
+
+    def get_selected_files(self):
+        return self.selected_files
 
     def get_all_keyword_profiles(self):
-        return self.keyword_profiles
-
-    def init_message_boxes(self):
-        self.message_box = QtWidgets.QMessageBox(self)
-        self.message_box.setIcon(QtWidgets.QMessageBox.NoIcon)
-
-    def show_info_message(self, title, message):
-
-        self.message_box.setWindowTitle(title)
-        self.message_box.setText(message)
-
-        self.message_box.exec_()
-
-    def format_folder_path(self, folder_path):
-        normalized_path = folder_path.replace('/', os.sep).replace('\\', os.sep)
-        parts = normalized_path.split(os.sep)
-        if len(parts) > 3:
-            return '...\\' + os.sep.join(parts[-3:])
-        return normalized_path
-
-    def multi_select_folders(self):
-        file_dialog = QtWidgets.QFileDialog(self)
-        file_dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
-        file_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
-        file_dialog.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowContextHelpButtonHint)
-
-        file_view = file_dialog.findChild(QtWidgets.QListView, 'listView')
-        if file_view:
-            file_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-
-        f_tree_view = file_dialog.findChild(QtWidgets.QTreeView)
-        if f_tree_view:
-            f_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-
-            # Customize the columns
-            header = f_tree_view.header()
-            header.setStretchLastSection(True)  # Enable stretching for the last column
-            header.setSectionsMovable(True)    # Allow columns to be reordered
-            header.setSectionsClickable(True)  # Allow column header interaction
-            header.setSectionResizeMode(QtWidgets.QHeaderView.Interactive)  # Enable resizing for all columns
-
-            # Set column visibility for desired columns: Name, Size, Type, Date Modified
-            for col_index in range(header.count()):
-                if col_index not in [0, 1, 2, 3]:  # Adjust these indices to match your desired columns
-                    header.hideSection(col_index)
-
-        last_directory = None
-
-        def update_last_directory(directory):
-            nonlocal last_directory
-            last_directory = directory
-
-        file_dialog.directoryEntered.connect(update_last_directory)
-
-        if file_dialog.exec():
-            folders = file_dialog.selectedFiles()
-            filtered_folders = [folder for folder in folders if folder != last_directory]
-            for folder in filtered_folders:
-                if folder and folder not in self.selected_folders:
-                    self.selected_folders.append(folder)
-                    formatted_path = self.format_folder_path(folder)
-                    self.list_widget.addItem(formatted_path)
-
-    def remove_folder(self):
-        selected_items = self.list_widget.selectedItems()
-        if selected_items:
-            for item in selected_items:
-                formatted_path = item.text()
-                full_path = None
-                for folder in self.selected_folders:
-                    if self.format_folder_path(folder) == formatted_path:
-                        full_path = folder
-                        break
-                if full_path:
-                    self.selected_folders.remove(full_path)
-                self.list_widget.takeItem(self.list_widget.row(item))
-
-    def load_profile_keywords(self, profile_name):
-        """Load keywords for the selected profile into the text input as a list."""
-        self.save_current_profile_keywords()
-        self.current_profile = profile_name
-        keywords = self.keyword_profiles[profile_name]
-        self.keyword_input.setPlainText("\n".join(keywords))
-
-        # Set focus to the keyword input field
-        self.keyword_input.setFocus()
-
-    def save_current_profile_keywords(self):
-        """Save the current keywords into the active profile as a list."""
-        text = self.keyword_input.toPlainText()
-        keywords = [keyword.strip() for keyword in text.splitlines() if keyword.strip()]  # Convert input text to list of keywords
-        self.keyword_profiles[self.current_profile] = keywords
-
-    def accept(self):
-        """Accept the dialog and check for existing presets before processing."""
-        preset_name = self.get_preset_name().strip()
-        text_presets_dir = self.parent().text_presets_dir  # Assume parent has this attribute
-        preset_filename = f'{preset_name}.txt'
-        preset_filepath = os.path.join(text_presets_dir, preset_filename)
-
-        if os.path.exists(preset_filepath):
-            self.show_info_message('Duplicate Preset', f'The preset "{preset_name}" already exists. Please choose a different name.')
-            return  # Do not accept the dialog
-
-        super(MultiFolderSelector, self).accept()
-
-
+        """Return all keyword profiles based on current method"""
+        self.save_dictionary_settings()
+        
+        if self.current_method == self.keyword_methods[0]:  # Dictionary Presets
+            profiles = {}
+            for i, control in enumerate(self.dictionary_controls):
+                if control['checkbox'].isChecked() and control['path_edit'].toolTip():
+                    try:
+                        with open(control['path_edit'].toolTip(), 'r', encoding='utf-8') as f:
+                            keywords = [line.strip() for line in f.readlines() 
+                                      if line.strip() and not line.strip().startswith(';')]
+                            
+                            if i == 0:  # Ignored keywords
+                                keywords = [f"!{kw}" if not kw.startswith('!') else kw 
+                                          for kw in keywords]
+                                profiles["Ignored keywords"] = keywords
+                            else:
+                                profiles[f"Highlight color {i}"] = keywords
+                    except Exception as e:
+                        print(f"Error loading dictionary file: {str(e)}")
+            return profiles
+        else:  # Manual Search
+            current_text = self.keyword_input.toPlainText()
+            self.manual_profiles[self.current_manual_profile] = [
+                line.strip() for line in current_text.splitlines() if line.strip()
+            ]
+            
+            profiles = {}
+            for name in [f"Highlight color {i}" for i in range(1, 10)] + ["Ignored keywords"]:
+                if name in self.manual_profiles:
+                    if name == "Ignored keywords":
+                        profiles[name] = [f"!{kw}" if not kw.startswith('!') else kw 
+                                        for kw in self.manual_profiles[name]]
+                    else:
+                        profiles[name] = self.manual_profiles[name]
+                else:
+                    profiles[name] = []
+            return profiles
 
 
 
@@ -4128,6 +4429,7 @@ class ThemeSelectorDialog(QtWidgets.QDialog):
 
 
 
+
 if __name__ == "__main__":
     
 
@@ -4136,7 +4438,7 @@ if __name__ == "__main__":
 
     # Subparser for "create_preset"
     create_preset_parser = subparsers.add_parser("create_preset", help="Process text folder")
-    create_preset_parser.add_argument("-folder_list", required=True, nargs="+", help="Path to the folder containing text files")
+    create_preset_parser.add_argument("-selected_files", required=True, nargs="+", help="List of file paths of text files to process")
     create_preset_parser.add_argument("-keyword_profiles", required=True, type=json.loads, help="Profiles in JSON format")
     create_preset_parser.add_argument("-preset_name", default="preset_output", help="Name of the preset")
     create_preset_parser.add_argument("-highlight_keywords", type=lambda x: x.lower() == "true", default=True, help="Highlight keywords (True/False)")
@@ -4161,7 +4463,7 @@ if __name__ == "__main__":
         app = QtWidgets.QApplication(sys.argv)
         view = MainApp(show_main_window=False)
         view.create_preset(
-            folder_list=args.folder_list,
+            selected_files=args.selected_files,
             keyword_profiles=args.keyword_profiles,
             preset_name=args.preset_name,
             highlight_keywords=args.highlight_keywords,

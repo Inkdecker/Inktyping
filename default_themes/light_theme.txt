@@ -60,8 +60,39 @@
         "QHeaderView::section": "background-color: rgb(220, 220, 220); color: black; padding: 4px; border: none; font-weight: normal;",
         "QSplitter::handle ": "background: transparent; width: 0px;",
         "window_icon": "ui/resources/icons/session_writing_light.png",
-        "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png"
+        "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png",
+        "QGroupBox": "color: rgb(220, 220, 220); border: 1px solid rgb(80, 80, 80); margin-top: 10px; padding-top: 15px; background: rgb(240, 240, 240);",
+        "QGroupBox::title": "subcontrol-origin: margin; left: 10px; padding: 0 3px; color: rgb(80, 80, 80);"
+
     },
+
+
+    "dictionary_controls": {
+        "checkbox": {
+            "QCheckBox": "color: rgb(40, 40, 40); background-color: transparent;"
+        },
+        "label": {
+            "QLabel": "color: rgb(40, 40, 40); background-color: transparent; font-weight: normal;"
+        },
+        "path_edit": {
+            "QLineEdit": "background: rgb(230, 230, 230); color: rgb(40, 40, 40); border: 1px solid rgb(200, 200, 200); selection-background-color: rgb(100, 100, 100);",
+            "QLineEdit:focus": "background: rgb(220, 220, 220); color: rgb(20, 20, 20); border: 1px solid rgb(160, 160, 160); selection-background-color: rgb(100, 100, 100);"
+        },
+        "browse_button": {
+            "QPushButton": "background: rgb(180, 180, 180); color: rgb(40, 40, 40); border: 1px solid rgb(160, 160, 160); padding: 4px;",
+            "QPushButton:hover": "background: rgb(200, 200, 200);",
+            "QPushButton:pressed": "background: rgb(160, 160, 160);"
+        }
+    },
+    
+    "dictionary_container": {
+        "QScrollArea": "background: rgb(240, 240, 240); border: 1px solid rgb(200, 200, 200);",
+        "QWidget": "background: rgb(240, 240, 240);",
+        "QFrame": "background: rgb(220, 220, 220); border: 1px solid rgb(200, 200, 200);"
+    },
+
+
+
     "labels": {
         "QLabel": "color: rgb(40, 40, 40)"
     },
