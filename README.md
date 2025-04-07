@@ -30,9 +30,10 @@ It can be used to either analyze text for research purposes or practice writing.
 	- 04.12.2024: Ability to create Rainmeter profiles to export the slideshows
    	- 30.12.2024: Main functions available from commande line and metadata extraction
       	- 28.03.2025: Search function for the sentence presets.
-       
-        - (New) 31.03.2025 New: Added the use of keyword dictionaries as a new parsing method
-     
+        - 31.03.2025: Added the use of keyword dictionaries as a new parsing method
+	
+     	- (New) 07.04.2025 New: Added color labels to the sentence preset table.
+      
 ##### Supported files :  .txt, .epub, .pdf
 
 
@@ -119,7 +120,7 @@ Button | Hotkey
 ------------ | -------------
 Start session | S
 Close Window | Escape
-
+Cycle labels | ²
 ### Session Window: 
 Button | Hotkey
 ------------ | -------------
