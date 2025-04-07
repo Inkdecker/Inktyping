@@ -39,6 +39,9 @@
     "dialog_styles": {
         "QDialog": "background: rgb(240, 240, 240); color: black;",
         "QPushButton": "background: rgb(180, 180, 180); color: black;",
+        "QPushButton:disabled": "background: rgb(220, 220, 220); color: gray;",
+
+
         "QListView, QTreeView": "background: rgb(230, 230, 230); color: black;border:none;",
         "QListView::item:hover, QTreeView::item:hover": "background: rgb(180, 180, 180); color: rgb(40, 40, 40);",
         "QListView::item:selected, QTreeView::item:selected": "background: rgb(180, 180, 180); color: rgb(40, 40, 40);border: 1px solid transparent;outline: none;",
@@ -54,17 +57,24 @@
         "QLabel": "color: rgb(40, 40, 40);",
         "QTextEdit": "background: rgb(240, 240, 240); color: rgb(0, 0, 0); border: 1px solid rgb(230, 230, 230);selection-background-color: rgb(100, 100, 100);",
         "QTextEdit:focus": "background: rgb(240, 240, 240); color: rgb(0, 0, 0); border: 1px solid rgb(160, 160, 160);selection-background-color: rgb(100, 100, 100);",
+
         "QTableWidget": "background: rgb(240, 240, 240); color: black;",
         "QTableWidget::item:selected": "background-color: rgb(200, 200, 200); color: black;",
         "QTableWidget::item:selected:focus": "background-color: rgb(200, 200, 200); color: black;",
-        "QHeaderView::section": "background-color: rgb(220, 220, 220); color: black; padding: 4px; border: none; font-weight: normal;",
+
+        "QHeaderView::section": "background-color: rgb(220, 220, 220); color: black; padding: 4px; border: none; border-right: 1px solid rgb(200, 200, 200); font-weight: normal;",
+
+
         "QSplitter::handle ": "background: transparent; width: 0px;",
         "window_icon": "ui/resources/icons/session_writing_light.png",
         "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png",
+
+        
         "QGroupBox": "color: rgb(220, 220, 220); border: 1px solid rgb(80, 80, 80); margin-top: 10px; padding-top: 15px; background: rgb(240, 240, 240);",
         "QGroupBox::title": "subcontrol-origin: margin; left: 10px; padding: 0 3px; color: rgb(80, 80, 80);"
 
     },
+
 
 
     "dictionary_controls": {

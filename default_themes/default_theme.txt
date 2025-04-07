@@ -39,6 +39,8 @@
     "dialog_styles": {
         "QDialog": "background: rgb(30, 30, 30); color: rgb(220, 220, 220);",
         "QPushButton": "background: rgb(153, 102, 51); color: rgb(220, 220, 220);",
+        "QPushButton:disabled": "background: rgb(120, 82, 44);color: rgb(150, 150, 150);",
+
         "QListView, QTreeView": "background: rgb(40, 40, 40); color: rgb(220, 220, 220);border:none;",
         "QListView::item:hover, QTreeView::item:hover": "background: rgb(60, 60, 60); color: rgb(220, 220, 220);",
         "QListView::item:selected, QTreeView::item:selected": "background: rgb(60, 60, 60); color: rgb(220, 220, 220);border: 1px solid transparent;outline: none;",

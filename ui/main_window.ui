@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>570</width>
-    <height>700</height>
+    <width>590</width>
+    <height>740</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,14 +18,14 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>570</width>
-    <height>700</height>
+    <width>590</width>
+    <height>740</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>599</width>
-    <height>731</height>
+    <width>590</width>
+    <height>740</height>
    </size>
   </property>
   <property name="palette">
@@ -448,10 +448,10 @@
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <property name="spacing">
-           <number>0</number>
+           <number>6</number>
           </property>
           <property name="rightMargin">
-           <number>253</number>
+           <number>230</number>
           </property>
           <item>
            <widget class="QLabel" name="label">
@@ -485,7 +485,7 @@
              <string notr="true">color: 'white';</string>
             </property>
             <property name="text">
-             <string>  Sentences presets</string>
+             <string>Sentences presets</string>
             </property>
            </widget>
           </item>
@@ -495,41 +495,111 @@
       </item>
       <item row="0" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
         <property name="leftMargin">
          <number>0</number>
         </property>
         <property name="topMargin">
-         <number>15</number>
+         <number>0</number>
         </property>
         <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
-         <widget class="QPushButton" name="theme_options_button">
-          <property name="minimumSize">
-           <size>
-            <width>73</width>
-            <height>20</height>
-           </size>
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+          <property name="spacing">
+           <number>3</number>
           </property>
-          <property name="maximumSize">
-           <size>
-            <width>25</width>
-            <height>20</height>
-           </size>
+          <property name="leftMargin">
+           <number>0</number>
           </property>
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
+          <property name="topMargin">
+           <number>0</number>
           </property>
-          <property name="styleSheet">
-           <string notr="true">background: rgb(220,220,220); color: 'black';</string>
+          <property name="rightMargin">
+           <number>0</number>
           </property>
-          <property name="text">
-           <string>Themes</string>
+          <property name="bottomMargin">
+           <number>0</number>
           </property>
-         </widget>
+          <item>
+           <spacer name="verticalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="theme_options_button">
+            <property name="minimumSize">
+             <size>
+              <width>73</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>73</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="focusPolicy">
+             <enum>Qt::NoFocus</enum>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background: rgb(220,220,220); color: 'black';</string>
+            </property>
+            <property name="text">
+             <string>Themes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="labels_options_button">
+            <property name="minimumSize">
+             <size>
+              <width>73</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>73</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background: rgb(220,220,220); color: 'black';</string>
+            </property>
+            <property name="text">
+             <string>Labels</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
+      </item>
+      <item row="0" column="2">
+       <spacer name="verticalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>10</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </item>
@@ -843,17 +913,20 @@
              <number>14</number>
             </property>
             <property name="bottomMargin">
-             <number>145</number>
+             <number>0</number>
             </property>
             <item>
-             <layout class="QVBoxLayout" name="verticalLayout_5">
-              <property name="leftMargin">
-               <number>29</number>
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
               </property>
-              <property name="rightMargin">
-               <number>0</number>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
               </property>
-             </layout>
+             </spacer>
             </item>
            </layout>
           </item>
@@ -1595,7 +1668,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>570</width>
+     <width>590</width>
      <height>21</height>
     </rect>
    </property>
