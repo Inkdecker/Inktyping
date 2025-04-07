@@ -23,16 +23,16 @@ It can be used to either analyze text for research purposes or practice writing.
 	- Handling of both singular and plural forms
 	- Ability to select keywords to ignore
 	- Up to 9 different color profiles for the highliting of the keywords
-   	- Ability to customize themes, highlight colors and shortcuts
+	- Ability to customize themes, highlight colors and shortcuts
 	- Autocopy sentences to clipboard
 	- Rich text / Plain text copy
-
-	- 04.12.2024: Ability to create Rainmeter profiles to export the slideshows
-   	- 30.12.2024: Main functions available from commande line and metadata extraction
-      	- 28.03.2025: Search function for the sentence presets.
-        - 31.03.2025: Added the use of keyword dictionaries as a new parsing method
 	
-     	- (New) 07.04.2025 New: Added color labels to the sentence preset table.
+	- 04.12.2024: Ability to create Rainmeter profiles to export the slideshows
+	- 30.12.2024: Main functions available from commande line and metadata extraction
+	- 28.03.2025: Search function for the sentence presets.
+	- 31.03.2025: Added the use of keyword dictionaries as a new parsing method
+	
+	- (New) 07.04.2025: Added color labels to the sentence preset table.
       
 ##### Supported files :  .txt, .epub, .pdf
 
