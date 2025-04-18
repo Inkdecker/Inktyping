@@ -1,3 +1,8 @@
+# <img src="https://raw.githubusercontent.com/Inkdecker/Inktyping/refs/heads/main/ui/resources/icons/Inktyping.png" width="50" style="vertical-align: middle;" /> Inktyping
+
+This is a free toll for text exploration that users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
+
+It can be used to either analyze text for research purposes or practice writing.
 <div align="center">
   <table>
     <tr>
@@ -10,13 +15,6 @@
     </tr>
   </table>
 </div>
-
-
-# <img src="https://raw.githubusercontent.com/Inkdecker/Inktyping/refs/heads/main/ui/resources/icons/Inktyping.png" width="50" style="vertical-align: middle;" /> Inktyping
-
-This is a free toll for text exploration that users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
-
-It can be used to either analyze text for research purposes or practice writing.
 
 # Features
 	- Sentence extraction using multiple keywords
