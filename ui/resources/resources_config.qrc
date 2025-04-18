@@ -27,13 +27,13 @@
     <file>icons/_Blank.ico</file>
     <file>icons/_Blank.png</file>
     <file>icons/text.png</file>
-    <file>icons/session_writing.ico</file>
-    <file>icons/session_writing.png</file>
-    <file>icons/session_writing_dark.png</file>
-    <file>icons/session_writing_light.png</file>
-    <file>icons/session_writing_48x48.png</file>
-    <file>icons/session_writing_transparent_dark_48x48.png</file>
-    <file>icons/session_writing_transparent_light_48x48.png</file>
+    <file>icons/Inktyping.ico</file>
+    <file>icons/Inktyping.png</file>
+    <file>icons/Inktyping_dark.png</file>
+    <file>icons/Inktyping_light.png</file>
+    <file>icons/Inktyping_48x48.png</file>
+    <file>icons/Inktyping_transparent_dark_48x48.png</file>
+    <file>icons/Inktyping_transparent_light_48x48.png</file>
   </qresource>
 
 </RCC>

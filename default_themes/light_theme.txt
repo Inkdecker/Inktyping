@@ -1,8 +1,8 @@
 {
     "MainWindow": {
         "QMainWindow": "background: rgb(240, 240, 240); color: black;",
-        "window_icon": "ui/resources/icons/session_writing_light.png",
-        "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png"
+        "window_icon": "ui/resources/icons/Inktyping_light.png",
+        "icon": "ui/resources/icons/Inktyping_transparent_light_48x48.png"
     },
     "FileDialog": {
         "QFileDialog": "background: rgb(240, 240, 240); color: black;",
@@ -66,8 +66,8 @@
 
 
         "QSplitter::handle ": "background: transparent; width: 0px;",
-        "window_icon": "ui/resources/icons/session_writing_light.png",
-        "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png",
+        "window_icon": "ui/resources/icons/Inktyping_light.png",
+        "icon": "ui/resources/icons/Inktyping_transparent_light_48x48.png",
 
         
         "QGroupBox": "color: rgb(220, 220, 220); border: 1px solid rgb(80, 80, 80); margin-top: 10px; padding-top: 15px; background: rgb(240, 240, 240);",
@@ -108,8 +108,8 @@
     },
     "session_display, image_display": {
         "QWidget": "background: rgb(180, 180, 180);",
-        "window_icon": "ui/resources/icons/session_writing_light.png",
-        "icon": "ui/resources/icons/session_writing_transparent_light_48x48.png"
+        "window_icon": "ui/resources/icons/Inktyping_light.png",
+        "icon": "ui/resources/icons/Inktyping_transparent_light_48x48.png"
     },
     "text_display": {
         "QWidget": "color: rgb(40, 40, 40);background: rgb(181, 185, 184);padding: 0 30px;border: none",

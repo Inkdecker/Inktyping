@@ -213,11 +213,11 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle">
-   <string>Sentence Practice</string>
+   <string>Sentence practice - Inktyping</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resources/resources_config.qrc">
-    <normaloff>:/icons/icons/session_writing.png</normaloff>:/icons/icons/session_writing.png</iconset>
+    <normaloff>:/icons/icons/Inktyping.png</normaloff>:/icons/icons/Inktyping.png</iconset>
   </property>
   <property name="windowOpacity">
    <double>4.000000000000000</double>
@@ -456,7 +456,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/icons/icons/session_writing_48x48.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/icons/icons/Inktyping_48x48.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>

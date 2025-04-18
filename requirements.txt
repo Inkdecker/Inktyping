@@ -1,4 +1,3 @@
-pygame
 PyQt5
 send2trash
 EbookLib
