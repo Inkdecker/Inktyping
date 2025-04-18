@@ -31,9 +31,9 @@ It can be used to either analyze text for research purposes or practice writing.
 	- 30.12.2024: Main functions available from commande line and metadata extraction
 	- 28.03.2025: Search function for the sentence presets.
 	- 31.03.2025: Added the use of keyword dictionaries as a new parsing method
-	
-	- (New) 07.04.2025: Added color labels to the sentence preset table.
-      
+	- 07.04.2025: Added color labels to the sentence preset table.
+ 
+	- (New) 18.04.2025: Renamed from session_drawing to Inktyping.
 ##### Supported files :  .txt, .epub, .pdf
 
 
