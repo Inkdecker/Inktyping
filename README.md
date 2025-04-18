@@ -37,7 +37,8 @@ It can be used to either analyze text for research purposes or practice writing.
 
 # Usage
 [Download](https://github.com/Inkdecker/Inktyping/releases/latest/download/Inktyping.exe) and run the executable, no installation needed.
-
+>Note : The settings, themes and preset files gets stored inside the **"writing_presets"** folder, this folder gets created upon launch if missing.
+>
 1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
 > Note : You can drag your favorite folders to the left column of the explorer to pin them for a quick access.
