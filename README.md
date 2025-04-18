@@ -1,18 +1,18 @@
 <div align="center">
   <table>
     <tr>
-      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(1).png" alt="Screenshot 1" width="300"/></td>
-      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(2).png" alt="Screenshot 2" width="300"/></td>
+      <td><img src="https://github.com/Inkdecker/Inktyping/blob/main/ui/resources/icons/sample%20(1).png" alt="Screenshot 1" width="300"/></td>
+      <td><img src="https://github.com/Inkdecker/Inktyping/blob/main/ui/resources/icons/sample%20(2).png" alt="Screenshot 2" width="300"/></td>
     </tr>
     <tr>
-      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(3).png" alt="Screenshot 3" width="300"/></td>
-      <td><img src="https://github.com/Inkdecker/session_writing/blob/main/ui/resources/icons/sample%20(4).png" alt="Screenshot 4" width="300"/></td>
+      <td><img src="https://github.com/Inkdecker/Inktyping/blob/main/ui/resources/icons/sample%20(3).png" alt="Screenshot 3" width="300"/></td>
+      <td><img src="https://github.com/Inkdecker/Inktyping/blob/main/ui/resources/icons/sample%20(4).png" alt="Screenshot 4" width="300"/></td>
     </tr>
   </table>
 </div>
 
 
-# <img src="https://raw.githubusercontent.com/Inkdecker/session_writing/refs/heads/main/ui/resources/icons/session_writing.png" width="25" style="vertical-align: middle;" /> Session Writing
+# <img src="https://raw.githubusercontent.com/Inkdecker/Inktyping/refs/heads/main/ui/resources/icons/Inktyping.png" width="25" style="vertical-align: middle;" /> Inktyping
 
 This is a free toll for text exploration that users can use to extract, highlight and display multiples sentences from text files using a list of keywords and prefixes.
 
@@ -38,7 +38,7 @@ It can be used to either analyze text for research purposes or practice writing.
 
 
 # Usage
-[Download](https://github.com/Inkdecker/session_writing/releases/download/1.0/session_writing.exe) and run the executable, no installation needed.
+[Download](https://github.com/Inkdecker/Inktyping/releases/latest/download/Inktyping.exe) and run the executable, no installation needed.
 
 1 - Click **"Add Folders"**, then select 1 or more folders containing the text files **(.txt, .epubs or .pdf)** you wish to process.
 
@@ -93,7 +93,7 @@ The sentence preset can be exported and used as rainmeter slideshow. To do so, s
  
 ##### Example :
 ```batch
-session_writing.exe create_preset -selected_files "D:\Desktop\Book1.epub" "D:\Desktop\Book2.epub" -keyword_profiles "{\"Ignored keywords\": [\"Ignored_keyword_1\",\"Ignored_keyword_2\"], \"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
+Inktyping.exe create_preset -selected_files "D:\Desktop\Book1.epub" "D:\Desktop\Book2.epub" -keyword_profiles "{\"Ignored keywords\": [\"Ignored_keyword_1\",\"Ignored_keyword_2\"], \"Highlight color 1\": [\"keyword1\",\"keyword2\",\"keyword3\"], \"Highlight color 2\": [\"keyword4\"]}" -preset_name "Text_preset_1" -get_metadata True -highlight_keywords True -output_folder "D:\Desktop\Output_Folder"
 ```
 ### Start session
 - **start_session_from_files**
@@ -104,7 +104,7 @@ session_writing.exe create_preset -selected_files "D:\Desktop\Book1.epub" "D:\De
  
 ##### Example :
 ```batch
-session_writing.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
+Inktyping.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
 ```
 
 ## Troubleshooting 
@@ -156,4 +156,4 @@ Move image to "..\rainmeter_presets\Deleted Files" | Mouse button 1
 Open Sentence folder | Mouse button 2
 
 ## Licence
-[GNU General Public License v3.0](https://github.com/Inkdecker/session_writing/blob/main/LICENSE)
+[GNU General Public License v3.0](https://github.com/Inkdecker/Inktyping/blob/main/LICENSE)
