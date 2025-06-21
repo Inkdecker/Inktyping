@@ -1634,7 +1634,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
         # Get the file name from the first column of the selected row
-        file_item = self.table_sentences_selection.item(selected_row, 0)
+        file_item = self.table_sentences_selection.item(selected_row, 1)
         if not file_item:
             self.show_info_message('Warning', 'No file associated with the selected preset.')
             return
@@ -1900,6 +1900,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             
             # Save settings to persist label changes
             self.save_session_settings()
+            self.update_selection_cache()
             
             return True
 
