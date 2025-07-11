@@ -2439,10 +2439,18 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         """Save session settings including labels"""
         session_settings_path = os.path.join(self.presets_dir, 'session_settings.txt')
         
+        # Load existing settings first to preserve dictionary settings
+        existing_settings = {}
+        if os.path.exists(session_settings_path):
+            try:
+                with open(session_settings_path, 'r', encoding='utf-8') as f:
+                    existing_settings = json.load(f)
+            except Exception as e:
+                print(f"Error loading existing settings: {str(e)}")
+        
         # Get current selections by filename
         selected_sentence_filename = None
         selected_session_filename = None
-
 
         # Get sentence selection
         selected_sentence_row = self.table_sentences_selection.currentRow()
@@ -2458,9 +2466,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             if name_item:
                 selected_session_filename = name_item.text() + ".txt"
 
-
-
-        # Update settings
+        # Update settings - preserve existing keyword_method and dictionary_settings
         settings = {
             "selected_sentence_row": selected_sentence_row,  # Keep for backward compatibility
             "selected_session_row": selected_session_row,  # Keep for backward compatibility
@@ -2471,6 +2477,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "autocopy_settings": self.autocopy_settings,
             "theme_settings": self.current_theme,
             "shortcuts": self.shortcut_settings,
+            "keyword_method": existing_settings.get("keyword_method", getattr(self, 'keyword_method', "Method 1: Dictionary Presets")),
+            "dictionary_settings": existing_settings.get("dictionary_settings", getattr(self, 'dictionary_settings', {str(i): {"enabled": False, "path": ""} for i in range(10)})),
             "labels_color_dictionary": self.labels_color_dictionary,
             "preset_labels_dictionary": self.preset_labels_dictionary,
             "sentence_names_cache": self.sentence_names_cache if hasattr(self, 'sentence_names_cache') else [],
