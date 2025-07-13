@@ -1843,69 +1843,95 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def rename_presets(self, item):
-        """Rename the preset file based on the new text typed in the row."""
-
+        """Simple function to rename the preset file based on the edited table item."""
+        
         print("-- Renaming file")
         try:
-            # Determine which table triggered the rename
+            # Determine which table and get the directory
             if item.tableWidget() == self.table_sentences_selection:
-                cache = self.sentence_names_cache
                 rename_directory = self.text_presets_dir
                 name_col_index = 1
             elif item.tableWidget() == self.table_session_selection:
-                cache = self.session_names_cache
                 rename_directory = self.session_presets_dir
                 name_col_index = 0
             else:
-                # Unexpected table widget, exit early
                 return False
-                
-            row = item.row()
-            if row >= len(cache):
-                return False
-
-            # Get the old filename from the cache
-            old_filename = cache[row]
-            new_filename = item.text().strip() + ".txt"
             
-            # Debugging output
-            print(f"Row: {row}")
-            print(f"Old filename: {old_filename}")
-            print(f"New filename: {new_filename}")
-
+            # Only rename if the user edited the name column
+            if item.column() != name_col_index:
+                return False
+            
+            table = item.tableWidget()
+            row = item.row()
+            
+            # Get the old filename from the currently selected files
+            if table == self.table_sentences_selection:
+                old_filename = self.selected_sentence_filename
+            else:
+                old_filename = self.selected_session_filename
+            
+            # If no file is selected, can't rename
+            if not old_filename:
+                self.show_info_message('Error', "No file selected to rename.")
+                return False
+            
+            # Get new name from user input
+            new_name = item.text().strip()
+            if not new_name:
+                self.show_info_message('Error', "Filename cannot be empty.")
+                return False
+            
+            new_filename = new_name + ".txt"
+            
+            # If name hasn't changed, nothing to do
+            if old_filename == new_filename:
+                return True
+            
             old_filepath = os.path.join(rename_directory, old_filename)
-            new_filepath = os.path.join(rename_directory, new_filename)
-
-            # Check if the old file exists
+            
+            # Check if old file exists
             if not os.path.exists(old_filepath):
-                self.show_info_message('Error', f"Cannot rename: Original file '{old_filename}' does not exist.")
+                self.show_info_message('Error', f"Original file '{old_filename}' not found.")
                 return False
-
-            # Check if the new filename already exists or if it is invalid
-            if os.path.exists(new_filepath):
-                self.show_info_message('Error', f"Cannot rename: '{new_filename}' already exists.")
-                return False
-
+            
+            # Handle duplicate names by adding number suffix
+            final_filename = new_filename
+            counter = 1
+            while os.path.exists(os.path.join(rename_directory, final_filename)):
+                name_without_ext = new_name
+                final_filename = f"{name_without_ext}_{counter}.txt"
+                counter += 1
+            
+            new_filepath = os.path.join(rename_directory, final_filename)
+            
             # Rename the file
             os.rename(old_filepath, new_filepath)
-
-            # Update label assignment if this is a sentence preset
-            if item.tableWidget() == self.table_sentences_selection and old_filename in self.preset_labels_dictionary:
-                label = self.preset_labels_dictionary[old_filename]
-                del self.preset_labels_dictionary[old_filename]
-                self.preset_labels_dictionary[new_filename] = label
             
-            # Update the cache after renaming
-            cache[row] = new_filename
+            # Update the table display if we added a suffix
+            if final_filename != new_filename:
+                display_name = final_filename[:-4]  # Remove .txt
+                item.setText(display_name)
             
-            # Save settings to persist label changes
-            self.save_session_settings()
+            # Update the selected filename variables
+            if table == self.table_sentences_selection:
+                self.selected_sentence_filename = final_filename
+                # Update label dictionary if it exists
+                if old_filename in self.preset_labels_dictionary:
+                    label = self.preset_labels_dictionary[old_filename]
+                    del self.preset_labels_dictionary[old_filename]
+                    self.preset_labels_dictionary[final_filename] = label
+            else:
+                self.selected_session_filename = final_filename
+            
+            # Update the cache and save settings
             self.update_selection_cache()
+            self.save_session_settings()
             
+            print(f"Renamed '{old_filename}' to '{final_filename}'")
             return True
-
+            
         except Exception as e:
-            self.show_info_message('Error', f"Failed to rename preset. Error: {str(e)}")
+            self.show_info_message('Error', f"Failed to rename file: {str(e)}")
             return False
 
 

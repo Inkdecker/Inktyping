@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'D:\Desktop\ART TUTORIALS\SHORTCUTS & STUFF\session_writing\ui\display_session.ui'
+# Form implementation generated from reading ui file 'D:\Desktop\ART TUTORIALS\SHORTCUTS & STUFF\Inktyping\ui\display_session.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #

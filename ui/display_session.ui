@@ -42,7 +42,7 @@
    <string/>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources/resources_config.qrc">
+   <iconset>
     <normaloff>:/icons/icons/session_writing.png</normaloff>:/icons/icons/session_writing.png</iconset>
   </property>
   <property name="styleSheet">
