@@ -135,7 +135,7 @@
         "font_family_lineedit": "Arial",
         "font_weight_lineedit": 50,
         "font_color_lineedit": "black",
-        "max_length_lineedit": 500
+        "max_length_lineedit": 10000
     },
 
     "lineEdit": {

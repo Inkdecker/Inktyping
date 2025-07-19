@@ -133,7 +133,7 @@
         "font_family_lineedit": "Arial",
         "font_weight_lineedit": 50,
         "font_color_lineedit": "black",
-        "max_length_lineedit": 500
+        "max_length_lineedit": 10000
     },
     "lineEdit": {
         "QWidget": "color: rgb(220, 220, 220);background: rgb(60, 60, 60);padding: 0 30px; border: 2px solid rgb(110, 110, 110);selection-background-color: rgb(100, 100, 100);"

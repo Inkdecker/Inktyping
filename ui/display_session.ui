@@ -143,8 +143,11 @@
      <property name="styleSheet">
       <string notr="true">background: rgb(200,200,200); padding: 0 30px;</string>
      </property>
+     <property name="text">
+      <string/>
+     </property>
      <property name="maxLength">
-      <number>250</number>
+      <number>1000</number>
      </property>
      <property name="placeholderText">
       <string>...</string>
