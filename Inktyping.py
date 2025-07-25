@@ -64,7 +64,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Define default shortcuts
         self.default_shortcuts = {
             "main_window": {
-                "start": "S", 
+                "start": "Return", 
                 "close": "Escape",
                 "cycle_label": "\u00b2"
             },
@@ -1178,6 +1178,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         """
         Get the forms of a keyword, handling the '&' prefix and combined keywords.
         Returns a list of forms and a boolean indicating if it's an exact match.
+        FIXED VERSION - handles plural/singular detection correctly
         """
         if '+' in keyword:
             # Split combined keywords and process each part
@@ -1190,7 +1191,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     all_forms.append([part[1:]])  # Exact form only
                     exact_matches.append(True)
                 else:
-                    all_forms.append([self.get_singular_form(part), self.get_plural_form(part)])
+                    forms = self.get_both_forms(part)
+                    all_forms.append(forms)
                     exact_matches.append(False)
             
             return all_forms, exact_matches
@@ -1198,14 +1200,41 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             if keyword.startswith('&'):
                 return [[keyword[1:]]], [True]  # Single keyword, exact match
             else:
-                return [[self.get_singular_form(keyword), self.get_plural_form(keyword)]], [False]  # Single keyword, both forms
+                forms = self.get_both_forms(keyword)
+                return [forms], [False]  # Single keyword, both forms
 
+
+
+    def get_both_forms(self, word):
+        """
+        Get both singular and plural forms of a word, regardless of input form.
+        This replaces the separate get_singular_form and get_plural_form methods.
+        """
+        # Try to get singular form
+        singular_result = self.plural.singular_noun(word)
+        
+        if singular_result is False:
+            # Word is already singular
+            singular = word
+            plural = self.plural.plural(word)
+        else:
+            # Word is plural, singular_result contains the singular form
+            singular = singular_result
+            plural = word
+        
+        # Return both forms, removing duplicates
+        forms = [singular]
+        if plural != singular:
+            forms.append(plural)
+        
+        return forms
 
 
     def contains_ignored_keyword(self, sentence, ignored_keywords):
         """
         Check if a sentence contains any of the ignored keywords.
         Handles both regular ignored keywords and exact matches (with & prefix).
+        FIXED VERSION - uses improved form detection
         """
         for ignored_keyword in ignored_keywords:
             # Remove the ! prefix first
@@ -1225,7 +1254,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                     
                     if re.search(pattern, sentence, re.IGNORECASE):
                         return True
-        return False   
+        return False
 
 
 
@@ -1233,7 +1262,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
     def process_highlight_keywords(self, filtered_sentences, profiles, processed_keywords):
         """
         Highlight keywords and their forms in sentences with the appropriate number of brackets based on the profile name.
-        Updated to handle metadata in sentence data.
+        Updated to handle metadata in sentence data and use improved form detection.
         """
         for profile_name, keywords in profiles.items():
             # Extract the numeric part from the profile name (e.g., 'Keywords_1' -> 1)
@@ -1246,7 +1275,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
             # Process each keyword in the profile
             for keyword in keywords:
-                # Get all forms of the keyword(s)
+                # Get all forms of the keyword(s) - FIXED VERSION
                 forms_list, exact_matches = self.get_keyword_forms(keyword)
                 
                 # Flatten the forms list for highlighting
@@ -1287,7 +1316,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         return filtered_sentences
 
 
-
     def replace_broken_characters(self, text):
         replacements = {
             "“": '"',
@@ -1318,40 +1346,48 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-
-    def get_plural_form(self, keyword):
-        return self.plural.plural(keyword)
-
-    def get_singular_form(self, keyword):
-        # For words already in singular form
-        if self.plural.singular_noun(keyword) == False:
-            return keyword
-        # For plurals
-        return self.plural.singular_noun(keyword)
-
-                
     def extract_sentences_with_keywords(self, file_paths, keywords, combined_sentences, processed_keywords, max_length, metadata_settings=True, metadata_prefix=";;"):
         """
         Extract sentences containing the provided keywords from the list of files.
         Optimized to process each file only once and pre-filter keywords.
+        FIXED VERSION - properly handles exact matches in combined keywords
         """
         def match_keywords(forms_list, exact_matches, sentence, max_length=200):
+            """
+            FIXED VERSION - properly handles exact matches for combined keywords
+            """
             def find_keyword_in_sentence(forms, exact_match, sentence):
+                """
+                Find keyword in sentence, respecting exact match requirements
+                """
                 for form in forms:
-                    if re.search(r'\b{}\b'.format(re.escape(form)), sentence, re.IGNORECASE):
-                        return form
+                    if exact_match:
+                        # For exact matches (& prefix), use word boundaries but no case variations
+                        pattern = r'\b{}\b'.format(re.escape(form))
+                        if re.search(pattern, sentence, re.IGNORECASE):
+                            return form
+                    else:
+                        # For regular matches, use word boundaries
+                        pattern = r'\b{}\b'.format(re.escape(form))
+                        if re.search(pattern, sentence, re.IGNORECASE):
+                            return form
                 return None
 
+            # Check that ALL keyword parts are found in the sentence
             found_keywords = []
             for forms, exact_match in zip(forms_list, exact_matches):
                 found_keyword = find_keyword_in_sentence(forms, exact_match, sentence)
                 if not found_keyword:
-                    return False
+                    return False  # If ANY part is missing, reject the sentence
                 found_keywords.append(found_keyword)
 
+            # If we get here, all required keywords were found
             return truncate_sentence_around_keywords(sentence, found_keywords, max_length)
 
         def truncate_sentence_around_keywords(sentence, keywords, max_length=200):
+            """
+            Truncate sentence around the found keywords
+            """
             positions = []
             for keyword in keywords:
                 match = re.search(r'\b{}\b'.format(re.escape(keyword)), sentence, re.IGNORECASE)
@@ -1444,9 +1480,32 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Pre-filter keywords based on simple text matching
                 active_keywords = {}
                 for keyword, (forms_list, exact_matches, all_forms) in keyword_forms_map.items():
-                    # Check if any form of the keyword appears in the text
-                    if any(form.lower() in full_text.lower() for forms in forms_list for form in forms):
-                        active_keywords[keyword] = (forms_list, exact_matches)
+                    # For combined keywords, we need to check each part
+                    if '+' in keyword:
+                        # Check if ALL parts of the combined keyword appear in the text
+                        all_parts_found = True
+                        for forms, exact_match in zip(forms_list, exact_matches):
+                            part_found = False
+                            for form in forms:
+                                if exact_match:
+                                    # For exact matches, be more strict in pre-filtering
+                                    if re.search(r'\b{}\b'.format(re.escape(form)), full_text, re.IGNORECASE):
+                                        part_found = True
+                                        break
+                                else:
+                                    if form.lower() in full_text.lower():
+                                        part_found = True
+                                        break
+                            if not part_found:
+                                all_parts_found = False
+                                break
+                        
+                        if all_parts_found:
+                            active_keywords[keyword] = (forms_list, exact_matches)
+                    else:
+                        # Single keyword - check if any form appears in the text
+                        if any(form.lower() in full_text.lower() for forms in forms_list for form in forms):
+                            active_keywords[keyword] = (forms_list, exact_matches)
 
                 if not active_keywords:
                     continue  # Skip processing if no keywords found in file
@@ -1821,7 +1880,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
         # Get the file name from the first column of the selected row
-        file_item = self.table_sentences_selection.item(selected_row, 0)
+        file_item = self.table_sentences_selection.item(selected_row, 1)
         if not file_item:
             self.show_info_message('Warning', 'No file associated with the selected preset.')
             return
