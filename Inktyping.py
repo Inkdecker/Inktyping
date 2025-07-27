@@ -993,11 +993,68 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         if is_gui:
             self.show_info_message('Extraction Complete', summary_message)
             self.load_presets()
+            self.select_preset_by_name(preset_name, "text")
         print(summary_message)
+    
 
 
 
 
+
+    def select_preset_by_name(self, preset_name, table_type="text"):
+        """
+        Select a preset in the specified table by its name.
+        
+        Args:
+            preset_name (str): The name of the preset to select (without .txt extension)
+            table_type (str): Either "images" or "session" to specify which table to search
+        
+        Returns:
+            bool: True if preset was found and selected, False otherwise
+        """
+        # Determine which table to use
+        if table_type == "text":
+            table = self.table_sentences_selection
+        elif table_type == "session":
+            table = self.table_session_selection
+        else:
+            print(f"Invalid table_type: {table_type}. Use 'text' or 'session'.")
+            return False
+        
+        # Block signals during selection to prevent unwanted triggers
+        table.blockSignals(True)
+        
+        try:
+            # Search through all rows in the table
+            for row in range(table.rowCount()):
+                # Get the preset name from the first column (assuming that's where the name is)
+                item = table.item(row, 1)
+                if item and item.text() == preset_name:
+                    # Found the preset, select this row
+                    table.selectRow(row)
+                    
+                    # Update the appropriate selection cache
+                    if table_type == "images":
+                        self.selected_sentence_row = row
+                        self.sentence_selection_cache = row
+                    elif table_type == "session":
+                        self.selected_session_row = row
+                    
+                    # Scroll to make sure the selected row is visible
+                    table.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtCenter)
+                    
+                    print(f"Selected preset '{preset_name}' at row {row} in {table_type} table")
+                    return True
+            
+            # Preset not found
+            print(f"Preset '{preset_name}' not found in {table_type} table")
+            return False
+            
+        finally:
+            # Always unblock signals
+            table.blockSignals(False)
+            # Update selection cache
+            self.update_selection_cache()
 
 
 
