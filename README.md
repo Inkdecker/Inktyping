@@ -31,7 +31,7 @@ It can be used to either analyze text for research purposes or practice writing.
 	- 31.03.2025: Added the use of keyword dictionaries as a new parsing method
 	- 07.04.2025: Added color labels to the sentence preset table.
  
-	- (New) 18.04.2025: Renamed from session_drawing to Inktyping.
+	- (New) 18.04.2025: Renamed from session_writing to Inktyping.
 ##### Supported files :  .txt, .epub, .pdf
 
 
