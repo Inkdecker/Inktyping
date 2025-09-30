@@ -7,6 +7,8 @@ import random
 import shutil
 import json  
 import datetime  
+import time
+
 
 from send2trash import send2trash
 from pathlib import Path
@@ -3486,8 +3488,19 @@ class SessionDisplay(QWidget, Ui_session_display):
             print(f"Error parsing entry: {entry}, Error: {e}")
         return str(entry).strip(), ""
 
+
+
+
+
     def display_sentence(self, update_status=True):
+        # Reset abort flag at the start of new load
+        self._abort_current_load = False
+        
         if not hasattr(self, 'session_info') or sip.isdeleted(self.session_info):
+            return
+
+        # Check for abort early
+        if self._abort_current_load:
             return
 
         if self.playlist_position >= len(self.playlist):
@@ -3496,13 +3509,26 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         current_sentence, metadata = self.parse_sentence_entry(self.playlist[self.playlist_position])
 
+        # Check for abort before processing
+        if self._abort_current_load:
+            return
+
         self.session_info.setText(f'{self.playlist_position + 1}/{len(self.playlist)}')
         self.apply_text_settings()
+
+        # Check for abort before highlighting (potentially expensive)
+        if self._abort_current_load:
+            return
 
         if self.highlight_toggle:
             displayed_sentence = self.highlight_keywords(current_sentence)
         else:
             displayed_sentence = self.highlight_keywords(current_sentence, display=False)
+        
+        # Check for abort before final display
+        if self._abort_current_load:
+            return
+            
         self.text_display.setText(displayed_sentence)
 
         if self.display_metadata:
@@ -3762,7 +3788,15 @@ class SessionDisplay(QWidget, Ui_session_display):
         Loads the next sentence in the playlist or displays an end screen if at the end.
         Resets the timer for a new sentence.
         """
- 
+        # Debounce rapid navigation
+        if hasattr(self, '_last_load_time'):
+            elapsed = time.time() - self._last_load_time
+            if elapsed < 0.15:  # 150ms minimum between loads
+                return
+        self._last_load_time = time.time()
+        
+        # Signal to abort any ongoing display operations
+        self._abort_current_load = True
         
         # Check if we are at the last sentence
         if self.playlist_position < len(self.playlist) - 1:
@@ -3780,7 +3814,6 @@ class SessionDisplay(QWidget, Ui_session_display):
         self.lineEdit.setFocus() 
         self.update_session_info()
 
-        # If there are any other buttons to untoggle, add them here
 
 
 
@@ -3788,7 +3821,16 @@ class SessionDisplay(QWidget, Ui_session_display):
         """
         Loads the previous sentence in the playlist or does nothing if at the start.
         """
-
+        # Debounce rapid navigation
+        if hasattr(self, '_last_load_time'):
+            elapsed = time.time() - self._last_load_time
+            if elapsed < 0.15:  # 150ms minimum between loads
+                return
+        self._last_load_time = time.time()
+        
+        # Signal to abort any ongoing display operations
+        self._abort_current_load = True
+        
         # Check if we are at the first sentence
         if self.playlist_position > 0:
             self.playlist_position -= 1  # Move to the previous sentence
@@ -3797,13 +3839,12 @@ class SessionDisplay(QWidget, Ui_session_display):
         else:
             return  # Do nothing if at the start of the playlist
 
-        if self.autocopy_settings :
+        if self.autocopy_settings:
             self.copy_sentence()
 
         self.lineEdit.clear()
         self.lineEdit.setFocus() 
         self.update_session_info()
-
 
     def reset_timer(self):
         """
