@@ -202,7 +202,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.display = None  # Initialize with None
 
         # Automatically start the session if auto_start is True
-        if self.auto_start_settings:
+        if self.auto_start_settings and show_main_window :
             self.start_session_from_files()
 
         # Show the main window if show_main_window is True
@@ -898,8 +898,14 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 highlight_keywords = dialog.highlight_keywords_checkbox.isChecked()
                 output_option = dialog.output_option_dropdown.currentText()
                 metadata_settings = dialog.extract_metadata_checkbox.isChecked()
+                
+                append_mode = dialog.get_append_mode()
+
                 if preset_name == None:
-                    preset_name = dialog.preset_name_edit.text()
+                    if append_mode:
+                        preset_name = dialog.selected_preset_name
+                    else:
+                        preset_name = dialog.preset_name_edit.text()
 
                 max_length = int(dialog.max_length_edit.text()) if dialog.max_length_edit.text().isdigit() else 200
                 keyword_profiles = dialog.get_all_keyword_profiles()
@@ -957,7 +963,39 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         combined_output_path = os.path.join(target_folder, f"{preset_name}.txt")
         seen_sentences = set()
 
-        with open(combined_output_path, 'w', encoding='utf-8') as output_file:
+        #Load existing sentences if in append mode
+        if is_gui and dialog.get_append_mode() and os.path.exists(combined_output_path):
+            try:
+                with open(combined_output_path, 'r', encoding='utf-8') as existing_file:
+                    content = existing_file.read()
+                    # Parse existing sentences to avoid duplicates
+                    # Handle both metadata and non-metadata formats
+                    blocks = content.split('\n\n')
+                    for block in blocks:
+                        block = block.strip()
+                        if block:
+                            try:
+                                # Try parsing as metadata format first
+                                entry = eval(block)
+                                if isinstance(entry, list) and len(entry) == 2:
+                                    seen_sentences.add((entry[0].strip(), ''))  # Add without filepath for comparison
+                            except:
+                                # Plain text format
+                                seen_sentences.add((block, ''))
+            except Exception as e:
+                print(f"Error reading existing preset: {e}")
+
+        # Change 'w' to 'a' when in append mode
+        file_mode = 'a' if (is_gui and dialog.get_append_mode() and os.path.exists(combined_output_path)) else 'w'
+
+        if not is_gui and os.path.exists(combined_output_path) and getattr(sys, 'argv', None):
+            import argparse
+            if any(arg in ['-append', '--append'] for arg in sys.argv):
+                file_mode = 'a'
+
+
+        with open(combined_output_path, file_mode, encoding='utf-8') as output_file:
+
             for sentences in all_results.values():
                 for sentence_data in sentences:
                     sentence_key = (sentence_data[0], sentence_data[1])  # sentence and filepath
@@ -4359,6 +4397,7 @@ class MultiFolderSelector(QtWidgets.QDialog):
         # Initialize selected files list
         self.selected_files = []
         self.text_presets_dir=text_presets_dir
+        self.parent_app = parent  
 
 
 
@@ -4383,12 +4422,26 @@ class MultiFolderSelector(QtWidgets.QDialog):
         self.file_layout.addWidget(self.list_widget)
 
 
+        # ADD THIS: Checkbox for append mode
+        self.append_checkbox = QtWidgets.QCheckBox("Add sentences to existing preset instead of creating new one", self)
+        self.append_checkbox.stateChanged.connect(self.on_append_checkbox_changed)
+        self.file_layout.addWidget(self.append_checkbox)
+
         # Preset Name Input with some spacing
         self.preset_name_edit = QtWidgets.QLineEdit(self)
         self.preset_name_edit.setPlaceholderText("Will be generated when files are selected")
         self.preset_name_edit.setText("")
         self.file_layout.addWidget(QtWidgets.QLabel("Preset Name:"))
         self.file_layout.addWidget(self.preset_name_edit)
+
+        # Info label for append mode
+        self.info_label = QtWidgets.QLabel("")
+        self.info_label.setStyleSheet("color: #666; font-style: italic;")
+        self.info_label.setWordWrap(True)
+        self.info_label.hide()
+        self.file_layout.addWidget(self.info_label)
+
+
         
         self.layout.addWidget(self.file_section)
         self.layout.addSpacing(10)  # Add space between sections
@@ -4572,6 +4625,7 @@ class MultiFolderSelector(QtWidgets.QDialog):
         # Load initial settings
         self.load_dictionary_settings()
 
+        self.update_append_availability()
 
     def browse_dictionary_file(self, index):
         """Open file dialog to select dictionary file and auto-enable checkbox"""
@@ -4589,6 +4643,49 @@ class MultiFolderSelector(QtWidgets.QDialog):
                 control['checkbox'].setChecked(True)  # Auto-enable the checkbox
                 
                 
+
+
+    def update_append_availability(self):
+        """Check if append mode should be available based on selected preset"""
+        if self.parent_app and hasattr(self.parent_app, 'table_sentences_selection'):
+            selected_row = self.parent_app.table_sentences_selection.currentRow()
+            if selected_row >= 0:
+                # There's a selected preset, enable append option
+                self.append_checkbox.setEnabled(True)
+                file_item = self.parent_app.table_sentences_selection.item(selected_row, 1)
+                if file_item:
+                    self.selected_preset_name = file_item.text()
+                else:
+                    self.selected_preset_name = None
+                    self.append_checkbox.setEnabled(False)
+            else:
+                # No preset selected, disable append option
+                self.append_checkbox.setEnabled(False)
+                self.selected_preset_name = None
+        else:
+            # No parent or table available, disable append option
+            self.append_checkbox.setEnabled(False)
+            self.selected_preset_name = None
+
+    def on_append_checkbox_changed(self, state):
+        """Handle checkbox state change"""
+        if state == QtCore.Qt.Checked:
+            # Append mode enabled
+            self.preset_name_edit.setEnabled(False)
+            self.preset_name_edit.clear()
+            if self.selected_preset_name:
+                self.info_label.setText(f"Adding sentences to '{self.selected_preset_name}'")
+                self.info_label.show()
+        else:
+            # Normal mode
+            self.preset_name_edit.setEnabled(True)
+            self.info_label.hide()
+            # Update preset name based on selected files if any
+            self.update_preset_name()
+
+    def get_append_mode(self):
+        """Return whether append mode is enabled"""
+        return self.append_checkbox.isChecked()
 
 
     def path_edited(self):
@@ -5175,7 +5272,6 @@ class ThemeSelectorDialog(QtWidgets.QDialog):
 
 
 if __name__ == "__main__":
-    
 
     parser = argparse.ArgumentParser(description="Sentence Queuer Tool")
     subparsers = parser.add_subparsers(dest="command")
@@ -5183,13 +5279,16 @@ if __name__ == "__main__":
     # Subparser for "create_preset"
     create_preset_parser = subparsers.add_parser("create_preset", help="Process text folder")
     create_preset_parser.add_argument("-selected_files", required=True, nargs="+", help="List of file paths of text files to process")
-    create_preset_parser.add_argument("-keyword_profiles", required=True, type=json.loads, help="Profiles in JSON format")
+    create_preset_parser.add_argument("-keyword_profiles", required=False, type=json.loads, help="Profiles in JSON format (optional; uses saved dictionaries if not provided)")
     create_preset_parser.add_argument("-preset_name", default="preset_output", help="Name of the preset")
     create_preset_parser.add_argument("-highlight_keywords", type=lambda x: x.lower() == "true", default=True, help="Highlight keywords (True/False)")
     create_preset_parser.add_argument("-output_option", default="Single output", help="Output option")
     create_preset_parser.add_argument("-get_metadata", type=lambda x: x.lower() == "true", default=True, help="Extract metadata (True/False)")
     create_preset_parser.add_argument("-max_length", type=int, default=200, help="Maximum sentence length")
     create_preset_parser.add_argument("-output_folder", help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
+    
+    # ✅ New argument for append mode
+    create_preset_parser.add_argument("-append", action="store_true", help="Append sentences to existing preset if file exists")
 
     # Subparser for "start_session_from_files"
     session_parser = subparsers.add_parser("start_session_from_files", help="Start session from files")
@@ -5198,14 +5297,72 @@ if __name__ == "__main__":
     session_parser.add_argument("-randomize_settings", type=lambda x: x.lower() == "true", default=True, help="Randomize settings (True/False)")
     session_parser.add_argument("-autocopy_settings", type=lambda x: x.lower() == "true", default=False, help="Clipboard settings (True/False)")
 
-
-
     # Parse arguments
     args = parser.parse_args()
 
     if args.command == "create_preset":
         app = QtWidgets.QApplication(sys.argv)
         view = MainApp(show_main_window=False)
+
+        # If no keyword profiles provided, load them from saved settings
+        if not args.keyword_profiles:
+            print("No keyword profiles provided, loading from saved settings...")
+            # make sure session settings were loaded into view.dictionary_settings
+            try:
+                # If view has dictionary_settings (loaded by load_session_settings) use it
+                dict_settings = getattr(view, "dictionary_settings", None)
+                # Fallback: try to read session_settings.txt directly from presets dir
+                if not dict_settings:
+                    settings_path = os.path.join(view.presets_dir, "session_settings.txt")
+                    if os.path.exists(settings_path):
+                        with open(settings_path, "r", encoding="utf-8") as sf:
+                            settings = json.load(sf)
+                            dict_settings = settings.get("dictionary_settings", {})
+                    else:
+                        dict_settings = {}
+
+                profiles = {}
+                for idx_str, cfg in dict_settings.items():
+                    try:
+                        enabled = cfg.get("enabled", False)
+                        path = cfg.get("path", "")
+                    except Exception:
+                        continue
+                    if not enabled or not path:
+                        continue
+                    # if path is relative, try to normalize
+                    path = os.path.normpath(path)
+                    if not os.path.exists(path):
+                        print(f"Warning: dictionary file not found: {path}")
+                        continue
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            lines = [ln.strip() for ln in f.readlines() if ln.strip() and not ln.strip().startswith(';')]
+                    except Exception as e:
+                        print(f"Error reading dictionary file {path}: {e}")
+                        continue
+
+                    # index "0" is treated as Ignored keywords in the GUI
+                    try:
+                        idx = int(idx_str)
+                    except:
+                        idx = None
+
+                    if idx == 0:
+                        profiles["Ignored keywords"] = lines
+                    else:
+                        profiles[f"Highlight color {idx}"] = lines
+
+                if profiles:
+                    args.keyword_profiles = profiles
+                    print(f"Loaded {len(profiles)} keyword profiles from settings.")
+                else:
+                    print("⚠️ No enabled dictionary files found in saved settings.")
+                    args.keyword_profiles = {"Keywords_1": []}
+            except Exception as e:
+                print("Failed to load keyword profiles from settings:", e)
+                args.keyword_profiles = {"Keywords_1": []}
+
         view.create_preset(
             selected_files=args.selected_files,
             keyword_profiles=args.keyword_profiles,
@@ -5217,7 +5374,17 @@ if __name__ == "__main__":
             output_folder=args.output_folder,
             is_gui=False
         )
+
+        # ✅ Only check for append if attribute exists
+        if hasattr(args, "append") and args.append:
+            preset_path = os.path.join(view.text_presets_dir, f"{args.preset_name}.txt")
+            if os.path.exists(preset_path):
+                print(f"Appending to existing preset: {preset_path}")
+            else:
+                print(f"Creating new preset: {preset_path}")
+
         app.quit()
+
 
     elif args.command == "start_session_from_files":
         app = QtWidgets.QApplication(sys.argv)
