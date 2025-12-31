@@ -486,7 +486,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             return
         
         # Store these values before potentially modifying state
-        was_editing = self.currently_editing
+        
         original_text = self.original_text
         
         # Reset editing state BEFORE making changes
@@ -873,6 +873,15 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 ########################################## TEXT PARSING ##########################################
 ########################################## TEXT PARSING ##########################################
 
+    def sanitize_filename(self, name):
+        """Remove or replace characters invalid in Windows filenames."""
+        invalid_chars = '<>:"/\\|?*'
+        for ch in invalid_chars:
+            name = name.replace(ch, '_')
+        # Remove trailing dots and spaces
+        name = name.rstrip(' .')
+        return name.strip()
+
     def create_preset(self, selected_files=None, keyword_profiles=None, preset_name=None, highlight_keywords=True, 
                       output_option="Single output", max_length=200, metadata_settings=True, output_folder=None, is_gui=True, metadata_prefix=";;"):
         """
@@ -961,6 +970,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Create the combined output file and count unique sentences
         combined_output_path = os.path.join(target_folder, f"{preset_name}.txt")
+        preset_name = self.sanitize_filename(preset_name)
+        combined_output_path = os.path.join(target_folder, f"{preset_name}.txt")
+
         seen_sentences = set()
 
         #Load existing sentences if in append mode
@@ -1014,8 +1026,9 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             for keyword, sentences in all_results.items():
                 if sentences:
                     keyword_output_path = os.path.join(
-                        target_folder, f"{preset_name}_{keyword}.txt"
+                        target_folder, f"{self.sanitize_filename(preset_name)}_{self.sanitize_filename(keyword)}.txt"
                     )
+
                     with open(keyword_output_path, 'w', encoding='utf-8') as output_file:
                         for sentence_data in sentences:
                             if metadata_settings:
@@ -5270,6 +5283,224 @@ class ThemeSelectorDialog(QtWidgets.QDialog):
 
 
 
+def highlight_clipboard_text(view):
+    """
+    Read text from clipboard, highlight it using saved dictionary settings,
+    and copy back to clipboard as rich text.
+    """
+    # Get clipboard instance
+    clipboard = QApplication.clipboard()
+    clipboard_text = clipboard.text()
+    
+    if not clipboard_text.strip():
+        print("⚠️ Clipboard is empty or contains no text.")
+        return
+    
+    print(f"📋 Read {len(clipboard_text)} characters from clipboard")
+    
+    # Load keyword profiles from settings (same logic as create_preset)
+    keyword_profiles = load_keyword_profiles_from_settings(view)
+    
+    if not keyword_profiles:
+        print("⚠️ No keyword profiles found in settings. Text will not be highlighted.")
+        # Still copy back as-is
+        copy_as_rich_text(clipboard_text, {}, view)
+        return
+    
+    print(f"✓ Loaded {len(keyword_profiles)} keyword profiles from settings")
+    
+    # Process the text through highlighting
+    highlighted_text = process_text_highlighting(
+        clipboard_text, 
+        keyword_profiles, 
+        view
+    )
+    
+    # Copy highlighted text back to clipboard as rich text
+    copy_as_rich_text(highlighted_text, keyword_profiles, view)
+    
+    print("✅ Highlighted text copied back to clipboard!")
+
+
+def load_keyword_profiles_from_settings(view):
+    """Load keyword profiles from saved dictionary settings."""
+    try:
+        dict_settings = getattr(view, "dictionary_settings", None)
+        
+        # Fallback: try to read session_settings.txt directly
+        if not dict_settings:
+            settings_path = os.path.join(view.presets_dir, "session_settings.txt")
+            if os.path.exists(settings_path):
+                with open(settings_path, "r", encoding="utf-8") as sf:
+                    settings = json.load(sf)
+                    dict_settings = settings.get("dictionary_settings", {})
+            else:
+                dict_settings = {}
+        
+        profiles = {}
+        for idx_str, cfg in dict_settings.items():
+            try:
+                enabled = cfg.get("enabled", False)
+                path = cfg.get("path", "")
+            except Exception:
+                continue
+                
+            if not enabled or not path:
+                continue
+                
+            path = os.path.normpath(path)
+            if not os.path.exists(path):
+                print(f"Warning: dictionary file not found: {path}")
+                continue
+                
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    lines = [ln.strip() for ln in f.readlines() 
+                            if ln.strip() and not ln.strip().startswith(';')]
+            except Exception as e:
+                print(f"Error reading dictionary file {path}: {e}")
+                continue
+            
+            try:
+                idx = int(idx_str)
+            except:
+                idx = None
+            
+            if idx == 0:
+                profiles["Ignored keywords"] = lines
+            else:
+                profiles[f"Highlight color {idx}"] = lines
+        
+        return profiles
+        
+    except Exception as e:
+        print(f"Failed to load keyword profiles from settings: {e}")
+        return {}
+
+
+def process_text_highlighting(text, keyword_profiles, view):
+    """
+    Apply keyword highlighting to text using the same logic as the main app.
+    """
+    # Remove ignored keywords from text first
+    ignored_keywords = keyword_profiles.get("Ignored keywords", [])
+    
+    # Track which keywords have been processed
+    processed_keywords = []
+    
+    # Create a dictionary to store highlighted versions
+    highlighted_sentences = {"text": [(text, "")]}
+    
+    # Apply highlighting from each profile
+    for profile_name, keywords in keyword_profiles.items():
+        if profile_name == "Ignored keywords":
+            continue
+            
+        # Extract profile number (e.g., "Highlight color 1" -> 1)
+        match = re.search(r'(\d+)', profile_name)
+        bracket_count = int(match.group(1)) if match else 1
+        
+        # Construct the bracket style
+        left_bracket = "{" * bracket_count
+        right_bracket = "}" * bracket_count
+        
+        # Process each keyword
+        for keyword in keywords:
+            # Get all forms of the keyword (handles singular/plural, exact matches, etc.)
+            forms_list, exact_matches = view.get_keyword_forms(keyword)
+            all_forms = [form for sublist in forms_list for form in sublist]
+            forms_lower = [form.lower() for form in all_forms]
+            
+            if any(form in processed_keywords for form in forms_lower):
+                continue
+            
+            # Create pattern to match any of the keyword forms
+            pattern = re.compile(
+                r'(?<!\w)({})\b'.format("|".join(map(re.escape, all_forms))), 
+                re.IGNORECASE
+            )
+            
+            # Highlight keywords in the text
+            for i, sentence_data in enumerate(highlighted_sentences["text"]):
+                def replace_func(match):
+                    original_word = match.group(0)
+                    return f"{left_bracket}{original_word}{right_bracket}"
+                
+                sentence = sentence_data[0]
+                highlighted_sentence = pattern.sub(replace_func, sentence)
+                highlighted_sentences["text"][i] = (highlighted_sentence, sentence_data[1])
+            
+            # Add all forms to processed_keywords
+            for form in all_forms:
+                processed_keywords.append(form.lower())
+    
+    return highlighted_sentences["text"][0][0]
+
+
+def copy_as_rich_text(text, keyword_profiles, view):
+    """
+    Copy text to clipboard as rich text with color formatting.
+    """
+    clipboard = QApplication.clipboard()
+    mime_data = QtCore.QMimeData()
+    
+    # Convert the highlighted text to HTML with colors
+    html_text = convert_to_html_with_colors(text, view)
+    
+    # Set both HTML and plain text versions
+    mime_data.setHtml(html_text)
+    mime_data.setText(remove_highlight_brackets(text))
+    
+    clipboard.setMimeData(mime_data)
+
+
+def convert_to_html_with_colors(text, view):
+    """
+    Convert text with {keyword} markers to HTML with color styling.
+    """
+    # Get text color from settings
+    try:
+        theme_file_path = os.path.join(view.theme_presets_dir, view.current_theme)
+        with open(theme_file_path, "r") as file:
+            theme_data = json.load(file)
+        
+        text_display = theme_data.get("text_display", {})
+        text_color = text_display.get("text_color", "rgb(238, 238, 238)")
+        
+        # Get highlight colors
+        highlight_colors = {}
+        for i in range(1, 10):
+            color_key = f"highlight_color_{i}"
+            highlight_colors[i] = text_display.get(color_key, "rgb(146,130,49)")
+    except:
+        text_color = "rgb(238, 238, 238)"
+        highlight_colors = {i: "rgb(146,130,49)" for i in range(1, 10)}
+    
+    # Wrap entire text in base color
+    html = f'<span style="color:{text_color};">'
+    
+    # Replace {keyword} with colored spans
+    def replace_with_color(match):
+        curly_count = match.group(0).count('{')
+        word = match.group(1)
+        color = highlight_colors.get(curly_count, highlight_colors[1])
+        return f'<span style="color:{color}">{word}</span>'
+    
+    html += re.sub(r'\{+(\w+?)\}+', replace_with_color, text)
+    html += '</span>'
+    
+    # Add line breaks
+    html = html.replace('\n', '<br>')
+    
+    return html
+
+
+def remove_highlight_brackets(text):
+    """Remove {brackets} for plain text version."""
+    return re.sub(r'\{+(\w+?)\}+', r'\1', text)
+
+
+
 
 if __name__ == "__main__":
 
@@ -5286,8 +5517,6 @@ if __name__ == "__main__":
     create_preset_parser.add_argument("-get_metadata", type=lambda x: x.lower() == "true", default=True, help="Extract metadata (True/False)")
     create_preset_parser.add_argument("-max_length", type=int, default=200, help="Maximum sentence length")
     create_preset_parser.add_argument("-output_folder", help="Folder to save the preset file. Defaults to text_presets_dir if not provided.")
-    
-    # ✅ New argument for append mode
     create_preset_parser.add_argument("-append", action="store_true", help="Append sentences to existing preset if file exists")
 
     # Subparser for "start_session_from_files"
@@ -5296,6 +5525,12 @@ if __name__ == "__main__":
     session_parser.add_argument("-session_preset_path", required=True, help="Path to the session preset file")
     session_parser.add_argument("-randomize_settings", type=lambda x: x.lower() == "true", default=True, help="Randomize settings (True/False)")
     session_parser.add_argument("-autocopy_settings", type=lambda x: x.lower() == "true", default=False, help="Clipboard settings (True/False)")
+
+    # Subparser for "highlight_clipboard"
+    highlight_parser = subparsers.add_parser(
+        "highlight_clipboard", 
+        help="Highlight text from clipboard using saved dictionary presets"
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -5375,7 +5610,7 @@ if __name__ == "__main__":
             is_gui=False
         )
 
-        # ✅ Only check for append if attribute exists
+        # Only check for append if attribute exists
         if hasattr(args, "append") and args.append:
             preset_path = os.path.join(view.text_presets_dir, f"{args.preset_name}.txt")
             if os.path.exists(preset_path):
@@ -5398,12 +5633,17 @@ if __name__ == "__main__":
         sys.exit(app.exec_())
 
 
+    elif args.command == "highlight_clipboard":
+        app = QtWidgets.QApplication(sys.argv)
+        view = MainApp(show_main_window=False)
+        highlight_clipboard_text(view)
+        app.quit()
+
+
     else:
         app = QtWidgets.QApplication(sys.argv)
         # Default behavior: Start the GUI
         view = MainApp(show_main_window=True)
         sys.exit(app.exec_())
-
-
 
 
