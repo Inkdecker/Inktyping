@@ -32,7 +32,7 @@ It can be used to either analyze text for research purposes or practice writing.
 	- 07.04.2025: Added color labels to the sentence preset table.
 	- 18.04.2025: Renamed from session_writing to Inktyping.
 	
-	- (New) 07.05.2026: Added -process_clipboard argument to run a session using text stored inside the clipboard
+	- (New) 07.05.2026: Added "-process_clipboard" argument to run a session using text stored inside the clipboard
 ##### Supported files :  .txt, .epub, .pdf
 
 
