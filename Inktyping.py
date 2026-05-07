@@ -117,6 +117,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.presets_dir = os.path.join(self.base_dir, 'writing_presets')
         self.text_presets_dir = os.path.join(self.presets_dir, 'text_presets')
+        self.clipboard_presets_dir = os.path.join(self.presets_dir, 'clipboard_presets')
         self.session_presets_dir = os.path.join(self.presets_dir, 'session_presets')
         self.theme_presets_dir = os.path.join(self.presets_dir, 'theme_presets')  # New directory for themes
         self.default_themes_dir = os.path.join(self.base_dir,'default_themes')  # Default themes directory
@@ -819,6 +820,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 if name_item:
                     # Store both filename and row number
                     self.selected_sentence_filename = name_item.text() + ".txt"
+                    self.selected_sentence_preset_path = os.path.join(self.text_presets_dir, self.selected_sentence_filename)
                     self.selected_sentence_row = selected_row
 
             # Track session selection by filename
@@ -828,6 +830,7 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 if name_item:
                     # Store both filename and row number
                     self.selected_session_filename = name_item.text() + ".txt"
+                    self.selected_session_preset_path = os.path.join(self.session_presets_dir, self.selected_session_filename)
                     self.selected_session_row = selected_row
 
     def filter_presets(self):
@@ -1661,13 +1664,14 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         # Create the directories if they do not exist
         os.makedirs(self.presets_dir, exist_ok=True)
         os.makedirs(self.text_presets_dir, exist_ok=True)
+        os.makedirs(self.clipboard_presets_dir, exist_ok=True)
         os.makedirs(self.session_presets_dir, exist_ok=True)
         os.makedirs(self.theme_presets_dir, exist_ok=True)  # Create the theme presets directory
 
         os.makedirs(self.rainmeter_presets_dir, exist_ok=True)  # Create the theme presets directory
         os.makedirs(self.rainmeter_deleted_files_dir, exist_ok=True)  # Create the theme presets directory
 
-        print(f"Created directories: {self.presets_dir}, {self.text_presets_dir}, {self.session_presets_dir}, {self.theme_presets_dir}, {self.rainmeter_presets_dir}, {self.rainmeter_deleted_files_dir}")
+        print(f"Created directories: {self.presets_dir}, {self.text_presets_dir}, {self.clipboard_presets_dir}, {self.session_presets_dir}, {self.theme_presets_dir}, {self.rainmeter_presets_dir}, {self.rainmeter_deleted_files_dir}")
 
 
     def save_session_presets(self):
@@ -2428,6 +2432,22 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.save_session_settings()
         self.start_session_from_files()
 
+    def find_saved_preset_path(self, filename, search_dirs):
+        """Find a saved preset by filename in the current app preset folders."""
+        if not filename:
+            return None
+
+        if os.path.isabs(filename) and os.path.exists(filename):
+            return filename
+
+        filename = os.path.basename(filename)
+        for directory in search_dirs:
+            candidate_path = os.path.join(directory, filename)
+            if os.path.exists(candidate_path):
+                return candidate_path
+
+        return None
+
     def start_session_from_files(self, sentence_preset_path=None, session_preset_path=None , randomize_settings=True):
         """
         Creates and runs SessionDisplay using information from the selected session and preset files.
@@ -2456,14 +2476,25 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-        if self.selected_sentence_filename == None or self.selected_session_filename == None:
+        if sentence_preset_path is None:
+            sentence_preset_path = getattr(self, "selected_sentence_preset_path", None)
+        if session_preset_path is None:
+            session_preset_path = getattr(self, "selected_session_preset_path", None)
+
+        if sentence_preset_path is None or not os.path.exists(sentence_preset_path):
+            sentence_preset_path = self.find_saved_preset_path(
+                getattr(self, "selected_sentence_filename", None),
+                [self.text_presets_dir, self.clipboard_presets_dir]
+            )
+        if session_preset_path is None or not os.path.exists(session_preset_path):
+            session_preset_path = self.find_saved_preset_path(
+                getattr(self, "selected_session_filename", None),
+                [self.session_presets_dir, self.clipboard_presets_dir]
+            )
+
+        if sentence_preset_path is None or session_preset_path is None:
             self.show()
             return
-             
-        if sentence_preset_path == None:
-            sentence_preset_path = os.path.join(self.text_presets_dir, self.selected_sentence_filename )
-        if session_preset_path == None:
-            session_preset_path = os.path.join(self.session_presets_dir, self.selected_session_filename )
 
         randomize_settings = self.randomize_settings
 
@@ -2555,6 +2586,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "selected_session_row": -1,
             "selected_sentence_filename": None,
             "selected_session_filename": None,
+            "selected_sentence_preset_path": None,
+            "selected_session_preset_path": None,
             "randomize_settings": False,
             "auto_start_settings": False,
             "autocopy_settings": False,
@@ -2622,6 +2655,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.selected_sentence_filename = current_settings["selected_sentence_filename"]
         self.selected_session_filename = current_settings["selected_session_filename"]
+        self.selected_sentence_preset_path = current_settings.get("selected_sentence_preset_path")
+        self.selected_session_preset_path = current_settings.get("selected_session_preset_path")
 
         # Initialize caches if they exist in settings
         if "sentence_names_cache" in current_settings:
@@ -2644,22 +2679,28 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 print(f"Error loading existing settings: {str(e)}")
         
         # Get current selections by filename
-        selected_sentence_filename = None
-        selected_session_filename = None
+        selected_sentence_filename = getattr(self, "selected_sentence_filename", None)
+        selected_session_filename = getattr(self, "selected_session_filename", None)
+        selected_sentence_preset_path = getattr(self, "selected_sentence_preset_path", None)
+        selected_session_preset_path = getattr(self, "selected_session_preset_path", None)
+
+        use_table_selection = not getattr(self, "_saving_explicit_preset_paths", False)
 
         # Get sentence selection
-        selected_sentence_row = self.table_sentences_selection.currentRow()
-        if selected_sentence_row >= 0:
+        selected_sentence_row = self.table_sentences_selection.currentRow() if use_table_selection else getattr(self, "selected_sentence_row", -1)
+        if use_table_selection and selected_sentence_row >= 0:
             name_item = self.table_sentences_selection.item(selected_sentence_row, 1)
             if name_item:
                 selected_sentence_filename = name_item.text() + ".txt"
+                selected_sentence_preset_path = os.path.join(self.text_presets_dir, selected_sentence_filename)
         
         # Get session selection
-        selected_session_row = self.table_session_selection.currentRow()
-        if selected_session_row >= 0:
+        selected_session_row = self.table_session_selection.currentRow() if use_table_selection else getattr(self, "selected_session_row", -1)
+        if use_table_selection and selected_session_row >= 0:
             name_item = self.table_session_selection.item(selected_session_row, 0)
             if name_item:
                 selected_session_filename = name_item.text() + ".txt"
+                selected_session_preset_path = os.path.join(self.session_presets_dir, selected_session_filename)
 
         # Update settings - preserve existing keyword_method and dictionary_settings
         settings = {
@@ -2667,6 +2708,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
             "selected_session_row": selected_session_row,  # Keep for backward compatibility
             "selected_sentence_filename": selected_sentence_filename,
             "selected_session_filename": selected_session_filename,
+            "selected_sentence_preset_path": selected_sentence_preset_path,
+            "selected_session_preset_path": selected_session_preset_path,
             "randomize_settings": self.randomize_settings,
             "auto_start_settings": self.auto_start_settings,
             "autocopy_settings": self.autocopy_settings,
@@ -5322,6 +5365,104 @@ def highlight_clipboard_text(view):
     print("✅ Highlighted text copied back to clipboard!")
 
 
+def process_clipboard_preset(view):
+    """
+    Create a temporary sentence preset from the current clipboard text and start it immediately.
+    Clipboard presets are stored outside the regular text preset folder so they do not appear in
+    the main preset table.
+    """
+    clipboard_text = QApplication.clipboard().text()
+
+    if not clipboard_text.strip():
+        print("Clipboard is empty or contains no text.")
+        view.show()
+        return False
+
+    keyword_profiles = load_keyword_profiles_from_settings(view)
+    if not keyword_profiles:
+        print("No enabled dictionary files found in saved settings.")
+        view.show()
+        return False
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    metadata_date = datetime.datetime.now().strftime("%d %B %Y").lstrip("0")
+    metadata_year = datetime.datetime.now().strftime("%Y")
+    preset_name = f"clipboard_preset_{timestamp}"
+    source_dir = os.path.join(view.clipboard_presets_dir, "_clipboard_sources")
+    os.makedirs(source_dir, exist_ok=True)
+
+    source_path = os.path.join(source_dir, f"{preset_name}_source.txt")
+    output_path = os.path.join(view.clipboard_presets_dir, f"{preset_name}.txt")
+
+    suffix = 1
+    while os.path.exists(output_path):
+        preset_name = f"clipboard_preset_{timestamp}_{suffix}"
+        source_path = os.path.join(source_dir, f"{preset_name}_source.txt")
+        output_path = os.path.join(view.clipboard_presets_dir, f"{preset_name}.txt")
+        suffix += 1
+
+    with open(source_path, "w", encoding="utf-8") as source_file:
+        source_file.write(clipboard_text)
+
+    clipboard_metadata = f"Clipboard Preset - {metadata_date} by Inktyping - {metadata_year}"
+    original_get_book_metadata = view.get_book_metadata
+
+    def get_clipboard_metadata(file_path, metadata_prefix=";;"):
+        return clipboard_metadata
+
+    view.get_book_metadata = get_clipboard_metadata
+
+    try:
+        view.create_preset(
+            selected_files=[source_path],
+            keyword_profiles={name: list(keywords) for name, keywords in keyword_profiles.items()},
+            preset_name=preset_name,
+            highlight_keywords=True,
+            output_option="Single output",
+            max_length=200,
+            metadata_settings=True,
+            output_folder=view.clipboard_presets_dir,
+            is_gui=False
+        )
+    finally:
+        view.get_book_metadata = original_get_book_metadata
+
+    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+        print("Clipboard was processed, but no matching sentences were extracted.")
+        view.show()
+        return False
+
+    clipboard_session_path = os.path.join(view.clipboard_presets_dir, "clipboard_session_default.txt")
+    clipboard_session = {
+        "session_name": "Clipboard Session",
+        "total_sentences": 1000,
+        "time": "60m 0s"
+    }
+
+    with open(clipboard_session_path, "w", encoding="utf-8") as session_file:
+        json.dump(clipboard_session, session_file, indent=4)
+
+    view.selected_sentence_filename = os.path.basename(output_path)
+    view.selected_sentence_preset_path = output_path
+    view.selected_session_filename = os.path.basename(clipboard_session_path)
+    view.selected_session_preset_path = clipboard_session_path
+    view.selected_sentence_row = -1
+    view.selected_session_row = -1
+    view._saving_explicit_preset_paths = True
+    try:
+        view.save_session_settings()
+    finally:
+        view._saving_explicit_preset_paths = False
+
+    print(f"Created clipboard preset: {output_path}")
+    view.start_session_from_files(
+        sentence_preset_path=output_path,
+        session_preset_path=clipboard_session_path,
+        randomize_settings=view.randomize_settings
+    )
+    return True
+
+
 def load_keyword_profiles_from_settings(view):
     """Load keyword profiles from saved dictionary settings."""
     try:
@@ -5505,6 +5646,7 @@ def remove_highlight_brackets(text):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Sentence Queuer Tool")
+    parser.add_argument("-process_clipboard", action="store_true", help="Create and start a temporary preset from the current clipboard text")
     subparsers = parser.add_subparsers(dest="command")
 
     # Subparser for "create_preset"
@@ -5535,7 +5677,13 @@ if __name__ == "__main__":
     # Parse arguments
     args = parser.parse_args()
 
-    if args.command == "create_preset":
+    if args.process_clipboard:
+        app = QtWidgets.QApplication(sys.argv)
+        view = MainApp(show_main_window=False)
+        process_clipboard_preset(view)
+        sys.exit(app.exec_())
+
+    elif args.command == "create_preset":
         app = QtWidgets.QApplication(sys.argv)
         view = MainApp(show_main_window=False)
 
