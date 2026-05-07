@@ -106,6 +106,18 @@ Inktyping.exe create_preset -selected_files "D:\Desktop\Book1.epub" "D:\Desktop\
 Inktyping.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
 ```
 
+### Process clipboard
+- **process_clipboard**
+  - **`-sentence_preset_path` (required)**: Path to the sentence preset file
+  - **`-session_preset_path` (required)**: Path to the session preset file
+  - **`-randomize_settings` (optional)**: Randomize settings (`True`/`False`)  |  *Default*: `True`
+  - **`-clipboard_settings` (optional)**: Clipboard keywords (`True`/`False`) | *Default*: `False`
+ 
+##### Example :
+```batch
+Inktyping.exe -process_clipboard
+```
+
 ## Troubleshooting 
 - Delete the **session_settings.txt** to reset settings and shortcuts.
 - Delete the **preset** folder and restart the executable to reset everything back to default.
