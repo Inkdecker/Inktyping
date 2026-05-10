@@ -109,10 +109,6 @@ Inktyping.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_
 
 ### Process clipboard
 - **process_clipboard**
-  - **`-sentence_preset_path` (required)**: Path to the sentence preset file
-  - **`-session_preset_path` (required)**: Path to the session preset file
-  - **`-randomize_settings` (optional)**: Randomize settings (`True`/`False`)  |  *Default*: `True`
-  - **`-clipboard_settings` (optional)**: Clipboard keywords (`True`/`False`) | *Default*: `False`
  
 ##### Example :
 ```batch
