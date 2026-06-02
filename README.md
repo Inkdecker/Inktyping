@@ -30,8 +30,9 @@ It can be used to either analyze text for research purposes or practice writing.
 	- 28.03.2025: Search function for the sentence presets.
 	- 31.03.2025: Added the use of keyword dictionaries as a new parsing method
 	- 07.04.2025: Added color labels to the sentence preset table.
- 
-	- (New) 18.04.2025: Renamed from session_writing to Inktyping.
+	- 18.04.2025: Renamed from session_writing to Inktyping.
+	
+	- (New) 07.05.2026: Added "-process_clipboard" argument to run a session using text stored inside the clipboard
 ##### Supported files :  .txt, .epub, .pdf
 
 
@@ -104,6 +105,14 @@ Inktyping.exe create_preset -selected_files "D:\Desktop\Book1.epub" "D:\Desktop\
 ##### Example :
 ```batch
 Inktyping.exe start_session_from_files -sentence_preset_path "D:\Desktop\preset_1.txt" -session_preset_path "D:\Desktop\session_presets_1.txt" -randomize_settings True -clipboard_settings False
+```
+
+### Process clipboard
+- **process_clipboard**
+ 
+##### Example :
+```batch
+Inktyping.exe -process_clipboard
 ```
 
 ## Troubleshooting 
