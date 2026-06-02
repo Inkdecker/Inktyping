@@ -67,7 +67,7 @@ class Ui_session_display(object):
         self.lineEdit.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.lineEdit.setStyleSheet("background: rgb(200,200,200); padding: 0 30px;")
         self.lineEdit.setText("")
-        self.lineEdit.setMaxLength(0)
+        self.lineEdit.setMaxLength(1000)
         self.lineEdit.setObjectName("lineEdit")
         self.verticalLayout.addWidget(self.lineEdit)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()

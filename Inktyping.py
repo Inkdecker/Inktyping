@@ -39,6 +39,17 @@ from session_display import Ui_session_display
 import resources_config_rc  
 
 
+HIGHLIGHT_BRACKET_PATTERN = re.compile(r'(\{+)([^{}\r\n]+?)(\}+)')
+
+
+def highlight_bracket_level(match):
+    return min(len(match.group(1)), len(match.group(3)))
+
+
+def highlight_bracket_text(match):
+    return match.group(2)
+
+
 
 
 class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -3109,7 +3120,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         """
         if not display:
             # Remove highlight curly braces and return plain text
-            sentence = re.sub(r'\{+(\w+?)\}+', r'\1', sentence)  # Remove {...}, {{...}}, etc.
+            sentence = HIGHLIGHT_BRACKET_PATTERN.sub(highlight_bracket_text, sentence)  # Remove {...}, {{...}}, etc.
             return sentence
 
         # Apply overall text color to the sentence
@@ -3119,17 +3130,17 @@ class SessionDisplay(QWidget, Ui_session_display):
         def replace_with_color(match):
             """Determine the color based on the number of curly braces and return the highlighted span."""
             # Count the number of opening braces
-            curly_count = match.group(0).count('{')
+            curly_count = highlight_bracket_level(match)
 
             # Find the corresponding highlight color
             color_key = f"highlight_color_{curly_count}"
             color_style = self.color_settings.get(color_key, self.color_settings["highlight_color_1"])
 
             # Return the highlighted keyword wrapped in the appropriate color style
-            return rf'<span style="color:{color_style}">{match.group(1)}</span>'
+            return rf'<span style="color:{color_style}">{highlight_bracket_text(match)}</span>'
 
         # Use regex to find keywords with different levels of curly brackets and replace them
-        sentence = re.sub(r'\{+(\w+?)\}+', replace_with_color, sentence)
+        sentence = HIGHLIGHT_BRACKET_PATTERN.sub(replace_with_color, sentence)
 
         return sentence
 
@@ -3142,10 +3153,10 @@ class SessionDisplay(QWidget, Ui_session_display):
         
         # Function to replace curly braces with appropriate highlighted spans
         def replace_with_color(match):
-            curly_count = match.group(0).count('{')
+            curly_count = highlight_bracket_level(match)
             color_key = f"highlight_color_{curly_count}"
             color_style = self.color_settings.get(color_key, self.color_settings["highlight_color_1"])
-            return rf'<span style="color:{color_style}">{match.group(1)}</span>'
+            return rf'<span style="color:{color_style}">{highlight_bracket_text(match)}</span>'
         
         if metadata:
             metadata_text = f" - {sentence_metadata}" if sentence_metadata else ""
@@ -3154,7 +3165,7 @@ class SessionDisplay(QWidget, Ui_session_display):
         
         if rich_text:
             text_color = self.color_settings.get('text_color', 'rgb(0, 255, 255)')
-            highlighted_sentence = re.sub(r'\{+(\w+?)\}+', replace_with_color, current_sentence)
+            highlighted_sentence = HIGHLIGHT_BRACKET_PATTERN.sub(replace_with_color, current_sentence)
             highlighted_sentence = rf'<span style="color:{text_color}">{highlighted_sentence}</span>'
             
             # Add metadata if enabled
@@ -3167,7 +3178,7 @@ class SessionDisplay(QWidget, Ui_session_display):
             mime_data = QtCore.QMimeData()
             mime_data.setData('text/html', highlighted_sentence_with_lines.encode('utf-8'))
             
-            plain_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
+            plain_text = HIGHLIGHT_BRACKET_PATTERN.sub(highlight_bracket_text, current_sentence)
             plain_text_with_metadata = f"{plain_text}{metadata_text}" if metadata else plain_text
             
             # Add two empty lines to the plain text version
@@ -3177,7 +3188,7 @@ class SessionDisplay(QWidget, Ui_session_display):
             clipboard.setMimeData(mime_data)
             print(f"Copied Rich Text (HTML): {highlighted_sentence_with_lines}")
         else:
-            clipboard_text = re.sub(r'\{+(\w+?)\}+', r'\1', current_sentence)
+            clipboard_text = HIGHLIGHT_BRACKET_PATTERN.sub(highlight_bracket_text, current_sentence)
             clipboard_text_with_metadata = f"{clipboard_text}{metadata_text}" if metadata else clipboard_text
             
             # Add two empty lines to the plain text
@@ -5622,12 +5633,12 @@ def convert_to_html_with_colors(text, view):
     
     # Replace {keyword} with colored spans
     def replace_with_color(match):
-        curly_count = match.group(0).count('{')
-        word = match.group(1)
+        curly_count = highlight_bracket_level(match)
+        word = highlight_bracket_text(match)
         color = highlight_colors.get(curly_count, highlight_colors[1])
         return f'<span style="color:{color}">{word}</span>'
     
-    html += re.sub(r'\{+(\w+?)\}+', replace_with_color, text)
+    html += HIGHLIGHT_BRACKET_PATTERN.sub(replace_with_color, text)
     html += '</span>'
     
     # Add line breaks
@@ -5638,7 +5649,7 @@ def convert_to_html_with_colors(text, view):
 
 def remove_highlight_brackets(text):
     """Remove {brackets} for plain text version."""
-    return re.sub(r'\{+(\w+?)\}+', r'\1', text)
+    return HIGHLIGHT_BRACKET_PATTERN.sub(highlight_bracket_text, text)
 
 
 
@@ -5793,5 +5804,3 @@ if __name__ == "__main__":
         # Default behavior: Start the GUI
         view = MainApp(show_main_window=True)
         sys.exit(app.exec_())
-
-
