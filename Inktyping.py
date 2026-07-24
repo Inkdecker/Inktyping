@@ -30,6 +30,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QEvent, QItemSelectionModel
 from PyQt5.QtGui import QFont, QColor
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 import sip
 
 
@@ -2916,6 +2917,14 @@ class LabelColorDelegate(QStyledItemDelegate):
 class SessionDisplay(QWidget, Ui_session_display):
     closed = QtCore.pyqtSignal() # Needed here for close event to work.
 
+    # Sound alerts for typing sessions
+    SOUNDS_DIR = r"D:\Desktop\ART TUTORIALS\SHORTCUTS & STUFF\Inktyping\sounds"
+    SESSION_START_SOUND = os.path.join(SOUNDS_DIR, "first_alert.mp3")
+    MILESTONE_SOUND_10 = os.path.join(SOUNDS_DIR, "10 sentences.mp3")
+    MILESTONE_SOUND_20 = os.path.join(SOUNDS_DIR, "20 sentences.mp3")
+    MILESTONE_INTERVAL_10 = 10
+    MILESTONE_INTERVAL_20 = 20
+
     def __init__(self, file_path=None, shortcuts=None, schedule=None, items=None, total=None, autocopy_settings=None, themes_dir=None, current_theme=None):
         super().__init__()
         self.setupUi(self)
@@ -2984,6 +2993,19 @@ class SessionDisplay(QWidget, Ui_session_display):
 
         if autocopy_settings:
             self.clipboard_button.setChecked(True)
+
+        # Sound player for session alerts (start / milestone sounds)
+        self.sound_player = QMediaPlayer(self)
+        self.play_alert_sound(self.SESSION_START_SOUND)
+
+
+    def play_alert_sound(self, sound_path):
+        """Plays an mp3 alert sound (session start / milestone), if the file exists."""
+        if not sound_path or not os.path.exists(sound_path):
+            print(f"Sound file not found: {sound_path}")
+            return
+        self.sound_player.setMedia(QMediaContent(QtCore.QUrl.fromLocalFile(sound_path)))
+        self.sound_player.play()
 
 
     # Method to load settings from the theme file
@@ -3909,6 +3931,13 @@ class SessionDisplay(QWidget, Ui_session_display):
             self.new_entry = False
             self.reset_timer()  # Reset the timer for a new sentence
             self.display_sentence()  # Display the next sentence
+
+            # Play a milestone sound every 10 / 20 sentences (20 takes priority when both land on the same sentence)
+            sentence_number = self.playlist_position + 1
+            if sentence_number % self.MILESTONE_INTERVAL_20 == 0:
+                self.play_alert_sound(self.MILESTONE_SOUND_20)
+            elif sentence_number % self.MILESTONE_INTERVAL_10 == 0:
+                self.play_alert_sound(self.MILESTONE_SOUND_10)
         else:
             self.display_end_screen()  # Display end screen when at the end
 
