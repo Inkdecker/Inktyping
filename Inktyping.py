@@ -2922,6 +2922,7 @@ class SessionDisplay(QWidget, Ui_session_display):
     SESSION_START_SOUND = os.path.join(SOUNDS_DIR, "first_alert.mp3")
     MILESTONE_SOUND_10 = os.path.join(SOUNDS_DIR, "10 sentences.mp3")
     MILESTONE_SOUND_20 = os.path.join(SOUNDS_DIR, "20 sentences.mp3")
+    MILESTONE_INTERVAL_5 = 5
     MILESTONE_INTERVAL_10 = 10
     MILESTONE_INTERVAL_20 = 20
 
@@ -3932,11 +3933,13 @@ class SessionDisplay(QWidget, Ui_session_display):
             self.reset_timer()  # Reset the timer for a new sentence
             self.display_sentence()  # Display the next sentence
 
-            # Play a milestone sound every 10 / 20 sentences (20 takes priority when both land on the same sentence)
+            # Play a milestone sound every 5 / 10 / 20 sentences (20 takes priority, then 10, then 5)
             sentence_number = self.playlist_position + 1
             if sentence_number % self.MILESTONE_INTERVAL_20 == 0:
                 self.play_alert_sound(self.MILESTONE_SOUND_20)
             elif sentence_number % self.MILESTONE_INTERVAL_10 == 0:
+                self.play_alert_sound(self.MILESTONE_SOUND_10)
+            elif sentence_number % self.MILESTONE_INTERVAL_5 == 0:
                 self.play_alert_sound(self.MILESTONE_SOUND_10)
         else:
             self.display_end_screen()  # Display end screen when at the end
